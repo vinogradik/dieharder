@@ -191,6 +191,12 @@ int select_rng(int gennum,char *genname,unsigned int initial_seed)
  }
  rng = gsl_rng_alloc(dh_rng_types[gennum]);
 
+ /* For now, we tested two sample method with the reference data from file.
+  * In future command line can be upgraded, so user can choose ref_rng number.
+  */
+ if (ks_test == 4)
+	 ref_rng = gsl_rng_alloc(dh_rng_types[201]);
+
  /*
   * OK, here's the deal on seeds.  If strategy = 0, we set the seed
   * ONE TIME right HERE to either a randomly selected seed or whatever
@@ -244,6 +250,9 @@ int select_rng(int gennum,char *genname,unsigned int initial_seed)
   * test.  It may or may not ever be reset.
   */
  gsl_rng_set(rng,seed);
+
+ if(ks_test == 4)
+ 	   gsl_rng_set(ref_rng, seed);
 
  /*
   * Here we evaluate the speed of the generator if the rate flag is set.

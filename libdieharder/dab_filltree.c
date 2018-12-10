@@ -36,7 +36,7 @@ static double targetData[] = {
 
 inline int insert(double x, double *array, unsigned int startVal);
 
-int dab_filltree(Test **test,int irun) {
+int dab_filltree(Test **test,int irun, gsl_rng *cur_rng) {
  int size = (ntuple == 0) ? 32 : ntuple;
  unsigned int target = sizeof(targetData)/sizeof(double);
  int startVal = (size / 2) - 1;
@@ -74,7 +74,7 @@ int dab_filltree(Test **test,int irun) {
    memset(array, 0, sizeof(double) * size);
    i = 0;
    do {
-     unsigned int v = gsl_rng_get(rng);
+     unsigned int v = gsl_rng_get(cur_rng);
 
      x = ((double) RotL(v, rotAmount)) / rmax_mask;
      i++;
@@ -90,10 +90,10 @@ int dab_filltree(Test **test,int irun) {
    if (j % (test[0]->tsamples/CYCLES) == 0) rotAmount++;
  }
 
- test[0]->pvalues[irun] = chisq_pearson(counts + start, expected + start, end - start);
+ test[0]->st_values[irun] = test[0]->pvalues[irun] = chisq_pearson(counts + start, expected + start, end - start);
 
  for (i = 0; i < size/2; i++) expected[i] = test[0]->tsamples/(size/2);
- test[1]->pvalues[irun] = chisq_pearson(positionCounts, expected, size/2);
+ test[1]->st_values[irun] = test[1]->pvalues[irun] = chisq_pearson(positionCounts, expected, size/2);
 
 
  nullfree(positionCounts);

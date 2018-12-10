@@ -76,7 +76,7 @@ double evalMostExtreme(double *pvalue, unsigned int num);
  * largest too often (and about as often as each other).
  */
 
-int dab_dct(Test **test,int irun)
+int dab_dct(Test **test,int irun, gsl_rng *cur_rng)
 {
  double *dct;
  unsigned int *input;
@@ -138,7 +138,7 @@ int dab_dct(Test **test,int irun)
 
    /* Read (and rotate) the actual rng words. */
    for (i=0; i<len; i++) {
-     input[i] = gsl_rng_get(rng);
+     input[i] = gsl_rng_get(cur_rng);
      input[i] = RotL(input[i], rotAmount);
    }
 
@@ -178,7 +178,7 @@ int dab_dct(Test **test,int irun)
      expected[i] = (double) test[0]->tsamples / len;
    }
    p = chisq_pearson(positionCounts, expected, len);
-   test[0]->pvalues[irun] = p;
+   test[0]->st_values[irun] = test[0]->pvalues[irun] = p;
    free(expected);
  } else {
    /* Fallback method: perform a ks test for uniformity of the

@@ -49,6 +49,9 @@ int execute_test(int dtest_num)
   */
  Test **dieharder_test;
 
+ /* The results struct for the test of the reference rng. */
+ Test **ref_test;
+
  /*
   * Here we have to look at strategy FIRST.  If strategy is not zero,
   * we have to reseed either randomly or from the value of nonzero Seed.
@@ -67,6 +70,11 @@ int execute_test(int dtest_num)
    }
    gsl_rng_set(rng,seed);
 
+   /* Set seed for the test of the reference rng. */
+   if(ks_test == 4){
+     gsl_rng_set(ref_rng, seed);
+   }
+
  }
 
  /* printf("Test number %d: execute_test(%s) being run.\n",dtest_num,dh_test_types[dtest_num]->sname);*/
@@ -77,6 +85,10 @@ int execute_test(int dtest_num)
   */
  dieharder_test = create_test(dh_test_types[dtest_num],tsamples,psamples);
 
+ /* Create the test for the reference rng. */
+ if (ks_test == 4){
+   ref_test = create_test(dh_test_types[dtest_num],tsamples,psamples);
+ }
  /*
   * We now have to implement Xtrategy.  Since std_test is now smart enough
   * to be able to differentiate a first call after creation or clear from
@@ -89,7 +101,7 @@ int execute_test(int dtest_num)
  /* Xstep = whatever; */
  need_more_p = YES;
  while(need_more_p){
-   std_test(dh_test_types[dtest_num],dieharder_test);
+   std_test(dh_test_types[dtest_num],dieharder_test, ref_test);
    output(dh_test_types[dtest_num],dieharder_test);
    smallest_p = 0.5;
    for(i = 0; i < dh_test_types[dtest_num]->nkps ; i++){
@@ -135,6 +147,10 @@ int execute_test(int dtest_num)
 
  destroy_test(dh_test_types[dtest_num],dieharder_test);
 
+ /* Destroy the test of the reference rng. */
+ if (ks_test == 4){
+   destroy_test(dh_test_types[dtest_num],ref_test);
+ }
  return(0);
 
 }

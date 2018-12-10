@@ -18,7 +18,7 @@
 
 #include <dieharder/libdieharder.h>
 
-int sts_runs(Test **test, int irun)
+int sts_runs(Test **test, int irun, gsl_rng *cur_rng)
 {
 
  int b,t;
@@ -51,7 +51,7 @@ int sts_runs(Test **test, int irun)
   * Create entire bitstring to be tested
   */
  for(t=0;t<test[0]->tsamples;t++){
-   rand_int[t] = gsl_rng_get(rng);
+   rand_int[t] = gsl_rng_get(cur_rng);
  }
 
  /*
@@ -110,6 +110,7 @@ int sts_runs(Test **test, int irun)
    printf(" p = %f c00 = %f c01 = %f c10 = %f c11 = %f\n",pones,c00,c01,c10,c11);
  }
 
+ test[0]->st_values[irun] = ptest.x;
  Xtest_eval(&ptest);
  test[0]->pvalues[irun] = ptest.pvalue;
 

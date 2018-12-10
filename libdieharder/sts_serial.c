@@ -81,7 +81,7 @@
  * to be tested, once per test.
  */
 
-int sts_serial(Test **test,int irun)
+int sts_serial(Test **test,int irun, gsl_rng *cur_rng)
 {
 
  uint bsize;       /* number of bits/samples in uintbuf */
@@ -186,7 +186,7 @@ int sts_serial(Test **test,int irun)
   */
  for(t=0;t<tsamples;t++){
    /* A bit slower per call, but won't fail for short rngs */
-   uintbuf[t] = get_rand_bits_uint(32,0xFFFFFFFF,rng);
+   uintbuf[t] = get_rand_bits_uint(32,0xFFFFFFFF,cur_rng, 0);
    /* Fast, but deadly to rngs with less than 32 bits returned */
    /* uintbuf[t] = gsl_rng_get(rng); */
    MYDEBUG(D_STS_SERIAL){
@@ -298,8 +298,9 @@ int sts_serial(Test **test,int irun)
  if(irun == 0){
    test[j]->ntuple = 1;
  }
- test[j++]->pvalues[irun] = gsl_cdf_gaussian_P(mono_mean,mono_sigma);
-
+ test[j]->pvalues[irun] = gsl_cdf_gaussian_P(mono_mean,mono_sigma);
+ test[j]->st_values[irun] = test[j]->pvalues[irun];
+ j++;
  for(m=2;m<nb1;m++){
    delpsi2[m] = psi2[m] - psi2[m-1];
    del2psi2[m] = psi2[m] - 2.0*psi2[m-1] + psi2[m-2];
@@ -307,7 +308,9 @@ int sts_serial(Test **test,int irun)
    if(irun == 0){
      test[j]->ntuple = m;
    }
-   test[j++]->pvalues[irun] = pvalue;
+   test[j]->pvalues[irun] = pvalue;
+   test[j]->st_values[irun] = test[j]->pvalues[irun];
+   j++;
    MYDEBUG(D_STS_SERIAL){
      printf("pvalue 1[%u] = %f\n",m,pvalue);
    }
@@ -316,7 +319,9 @@ int sts_serial(Test **test,int irun)
      if(irun == 0){
        test[j]->ntuple = m;
      }
-     test[j++]->pvalues[irun] = pvalue;
+     test[j]->pvalues[irun] = pvalue;
+     test[j]->st_values[irun] = test[j]->pvalues[irun];
+     j++;
      MYDEBUG(D_STS_SERIAL){
        printf("pvalue 2[%u] = %f\n",m,pvalue);
      }

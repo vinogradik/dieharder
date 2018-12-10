@@ -5,7 +5,7 @@
 /*
  * function prototype
  */
-int diehard_runs(Test **test,int irun);
+int diehard_runs(Test **test,int irun, gsl_rng *cur_rng);
 
 static Dtest diehard_runs_dtest __attribute__((unused)) = {
   "Diehard Runs Test",

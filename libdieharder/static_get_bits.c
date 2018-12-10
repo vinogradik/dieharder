@@ -22,12 +22,19 @@
  * caller (and guaranteed to be big enough to hold the result).
  */
 
-inline static uint get_rand_bits_uint (uint nbits, uint mask, gsl_rng *rng)
+/* We need to reset the internal state of this function from outside
+ * when we go from one rng two another in two sample mode.*/
+inline static uint get_rand_bits_uint (uint nbits, uint mask, gsl_rng *rng, int reset)
 {
 
  static uint bit_buffer;
  static uint bits_left_in_bit_buffer = 0;
  uint bits,breturn;
+
+ if (reset) {
+	 bits_left_in_bit_buffer = 0;
+	 return 0;
+ }
 
  /*
   * If there are enough bits left in the bit buffer, shift them out into

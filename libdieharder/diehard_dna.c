@@ -39,7 +39,7 @@
 #include "static_get_bits.c"
 static uint mask;
 
-int diehard_dna(Test **test, int irun)
+int diehard_dna(Test **test, int irun, gsl_rng *cur_rng)
 {
 
  uint i,j,k,l,m,n,o,p,q,r,t,boffset;
@@ -59,16 +59,16 @@ int diehard_dna(Test **test, int irun)
  /*
   * This is pointless, I think, but it shuts -Wall up and is harmless.
   */
- i0 = gsl_rng_get(rng);
- j0 = gsl_rng_get(rng);
- k0 = gsl_rng_get(rng);
- l0 = gsl_rng_get(rng);
- m0 = gsl_rng_get(rng);
- n0 = gsl_rng_get(rng);
- o0 = gsl_rng_get(rng);
- p0 = gsl_rng_get(rng);
- q0 = gsl_rng_get(rng);
- r0 = gsl_rng_get(rng);
+ i0 = gsl_rng_get(cur_rng);
+ j0 = gsl_rng_get(cur_rng);
+ k0 = gsl_rng_get(cur_rng);
+ l0 = gsl_rng_get(cur_rng);
+ m0 = gsl_rng_get(cur_rng);
+ n0 = gsl_rng_get(cur_rng);
+ o0 = gsl_rng_get(cur_rng);
+ p0 = gsl_rng_get(cur_rng);
+ q0 = gsl_rng_get(cur_rng);
+ r0 = gsl_rng_get(cur_rng);
  boffset = 0;
 
  /*
@@ -127,7 +127,7 @@ int diehard_dna(Test **test, int irun)
   * periodic wraparound) to be used for the next iteration.  We
   * therefore have to "seed" the process with a random l
   */
- q = gsl_rng_get(rng);
+ q = gsl_rng_get(cur_rng);
  /* mask = ((2 << 1)-1); */
  mask = 0x3;
  for(t=0;t<test[0]->tsamples;t++){
@@ -140,16 +140,16 @@ int diehard_dna(Test **test, int irun)
     * the tsamples loop at tsamples = 2^15...
     */
    if(t%32 == 0) {
-     i0 = gsl_rng_get(rng);
-     j0 = gsl_rng_get(rng);
-     k0 = gsl_rng_get(rng);
-     l0 = gsl_rng_get(rng);
-     m0 = gsl_rng_get(rng);
-     n0 = gsl_rng_get(rng);
-     o0 = gsl_rng_get(rng);
-     p0 = gsl_rng_get(rng);
-     q0 = gsl_rng_get(rng);
-     r0 = gsl_rng_get(rng);
+     i0 = gsl_rng_get(cur_rng);
+     j0 = gsl_rng_get(cur_rng);
+     k0 = gsl_rng_get(cur_rng);
+     l0 = gsl_rng_get(cur_rng);
+     m0 = gsl_rng_get(cur_rng);
+     n0 = gsl_rng_get(cur_rng);
+     o0 = gsl_rng_get(cur_rng);
+     p0 = gsl_rng_get(cur_rng);
+     q0 = gsl_rng_get(cur_rng);
+     r0 = gsl_rng_get(cur_rng);
      boffset = 0;
    }
    /*
@@ -202,6 +202,7 @@ int diehard_dna(Test **test, int irun)
    printf("%f %f %f\n",ptest.y,ptest.x,ptest.x-ptest.y);
  }
 
+ test[0]->st_values[irun] = ptest.x;
  Xtest_eval(&ptest);
  test[0]->pvalues[irun] = ptest.pvalue;
 

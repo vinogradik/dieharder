@@ -51,7 +51,7 @@ static double sdata[]={
 0.00001803, 0.00000982, 0.00001121
 };
 
-int diehard_squeeze(Test **test, int irun)
+int diehard_squeeze(Test **test, int irun, gsl_rng *cur_rng)
 {
 
  int i,j,k;
@@ -102,7 +102,7 @@ int diehard_squeeze(Test **test, int irun)
 
    /* printf("%d:   %d\n",j,k); */
    while((k != 1) && (j < 48)){
-     k = ceil(k*gsl_rng_uniform(rng));
+     k = ceil(k*gsl_rng_uniform(cur_rng));
      j++;
      /* printf("%d:   %d\n",j,k); */
    }
@@ -122,6 +122,7 @@ int diehard_squeeze(Test **test, int irun)
  }
 
  Vtest_eval(&vtest);
+ test[0]->st_values[irun] = vtest.chisq;
  test[0]->pvalues[irun] = vtest.pvalue;
 
  MYDEBUG(D_DIEHARD_SQUEEZE) {

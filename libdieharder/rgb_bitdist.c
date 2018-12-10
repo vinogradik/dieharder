@@ -60,7 +60,7 @@
 
 #include "static_get_bits.c"
 
-int rgb_bitdist(Test **test,int irun)
+int rgb_bitdist(Test **test,int irun, gsl_rng *cur_rng)
 {
 
  uint nb;          /* number of bits in a tested ntuple */
@@ -238,7 +238,7 @@ int rgb_bitdist(Test **test,int irun)
       * skipping bits.  Then increment the count of this ntuple value's
       * occurrence out of bsamples tries.
       */
-     value = get_rand_bits_uint (nb, mask, rng);
+     value = get_rand_bits_uint (nb, mask, cur_rng, 0);
      count[value]++;
 
      MYDEBUG(D_RGB_BITDIST) {
@@ -283,7 +283,7 @@ int rgb_bitdist(Test **test,int irun)
    printf("# rgb_bitdist():            vtest table\n");
    printf("# rgb_bitdist(): Outcome   bit          x           y       sigma\n");
  }
- ri = gsl_rng_uniform_int(rng,value_max);
+ ri = gsl_rng_uniform_int(cur_rng,value_max);
  for(i=0;i<value_max;i++){
    for(b=0;b<=bsamples;b++){
      MYDEBUG(D_RGB_BITDIST){
@@ -319,6 +319,8 @@ int rgb_bitdist(Test **test,int irun)
           0,irun,test[0]->pvalues[irun]);
      }
    }
+   if (i == 0)
+     test[0]->st_values[irun] = vtest[i].chisq;
    Vtest_destroy(&vtest[i]);
  }
 

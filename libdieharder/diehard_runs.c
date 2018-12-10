@@ -74,7 +74,7 @@ static double b[6] = {
  29.0/5040.0,
  1.0/840.0,};
 
-int diehard_runs(Test **test, int irun)
+int diehard_runs(Test **test, int irun, gsl_rng *cur_rng)
 {
 
  int i,j,k,t;
@@ -106,9 +106,9 @@ int diehard_runs(Test **test, int irun)
  if(verbose){
    printf("j    rand    ucount  dcount\n");
  }
- first = last = gsl_rng_get(rng);
+ first = last = gsl_rng_get(cur_rng);
  for(t=1;t<test[0]->tsamples;t++) {
-   next = gsl_rng_get(rng);
+   next = gsl_rng_get(cur_rng);
    if(verbose){
      printf("%d:  %10u   %u    %u\n",t,next,ucount,dcount);
    }
@@ -171,7 +171,10 @@ int diehard_runs(Test **test, int irun)
  MYDEBUG(D_DIEHARD_RUNS) {
    printf("uv = %f   dv = %f\n",uv,dv);
  }
+
+ test[0]->st_values[irun] = uv;
  test[0]->pvalues[irun] = gsl_sf_gamma_inc_Q(3.0,uv/2.0);
+ test[1]->st_values[irun] = dv;
  test[1]->pvalues[irun] = gsl_sf_gamma_inc_Q(3.0,dv/2.0);
 
  MYDEBUG(D_DIEHARD_RUNS) {

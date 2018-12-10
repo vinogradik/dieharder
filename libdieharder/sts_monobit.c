@@ -31,7 +31,7 @@
 
 #define NOBITS 0
 
-int sts_monobit(Test **test, int irun)
+int sts_monobit(Test **test, int irun, gsl_rng *cur_rng)
 {
 
  int i;
@@ -77,9 +77,9 @@ int sts_monobit(Test **test, int irun)
 
  for(i=0;i<test[0]->tsamples;i++) {
 #if NOBITS
-   bitstring = gsl_rng_get(rng);
+   bitstring = gsl_rng_get(cur_rng);
 #else
-   uint n = gsl_rng_get(rng);
+   uint n = gsl_rng_get(cur_rng);
 #endif
    MYDEBUG(D_STS_MONOBIT) {
 #if NOBITS
@@ -119,6 +119,7 @@ int sts_monobit(Test **test, int irun)
  MYDEBUG(D_STS_MONOBIT) {
    printf("mtext.x = %10.5f  ptest.sigma = %10.5f\n",ptest.x,ptest.sigma);
  }
+ test[0]->st_values[irun] = ptest.x;
  Xtest_eval(&ptest);
  test[0]->pvalues[irun] = ptest.pvalue;
 

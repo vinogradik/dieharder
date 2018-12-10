@@ -27,12 +27,12 @@
 
 #include <dieharder/libdieharder.h>
 
-uint roll(){
-  uint d = 1 + gsl_rng_uniform_int(rng,6);
+uint roll(gsl_rng *cur_rng){
+  uint d = 1 + gsl_rng_uniform_int(cur_rng,6);
   return d;
 }
 
-int diehard_craps(Test **test, int irun)
+int diehard_craps(Test **test, int irun, gsl_rng *cur_rng)
 {
 
  uint i;
@@ -105,7 +105,7 @@ int diehard_craps(Test **test, int irun)
     * This is the point count we have to make, the sum of two rolled
     * dice.
     */
-   point = roll() + roll();
+   point = roll(cur_rng) + roll(cur_rng);
    tries = 0;
 
    if(point == 7 || point == 11) {
@@ -132,7 +132,7 @@ int diehard_craps(Test **test, int irun)
 	* then freezes it.
         */
        (tries<20)?tries++:tries;
-       throw = roll() + roll();
+       throw = roll(cur_rng) + roll(cur_rng);
        if(throw == 7){
          vtest.x[tries]++;
 	 break;
@@ -148,7 +148,9 @@ int diehard_craps(Test **test, int irun)
  ptest.x = wins++;
  Xtest_eval(&ptest);
  Vtest_eval(&vtest);
+ test[0]->st_values[irun] = ptest.x;
  test[0]->pvalues[irun] = ptest.pvalue;
+ test[1]->st_values[irun] = vtest.chisq;
  test[1]->pvalues[irun] = vtest.pvalue;
 
  MYDEBUG(D_DIEHARD_CRAPS) {

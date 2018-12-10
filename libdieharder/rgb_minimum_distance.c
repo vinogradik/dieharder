@@ -63,7 +63,7 @@ double distance(const dTuple a,const dTuple b,uint dim)
   return(distance);
 }
 
-int rgb_minimum_distance(Test **test, int irun)
+int rgb_minimum_distance(Test **test, int irun, gsl_rng *cur_rng)
 {
 
  int i,j,d,t;
@@ -122,7 +122,7 @@ int rgb_minimum_distance(Test **test, int irun)
        printf("points[%u]: (",t);
    }
    for(d=0;d<rgb_md_dim;d++) {
-     points[t].c[d] = gsl_rng_uniform_pos(rng);
+     points[t].c[d] = gsl_rng_uniform_pos(cur_rng);
      if(verbose == D_RGB_MINIMUM_DISTANCE || verbose == D_ALL){
        printf("%6.4f",points[t].c[d]);
        if(d == rgb_md_dim - 1){
@@ -205,6 +205,7 @@ int rgb_minimum_distance(Test **test, int irun)
  }
  /* qarg = 1.0; */
  test[0]->pvalues[irun] = 1.0 - exp(earg)*qarg;
+ test[0]->st_values[irun] = mindist;
 
  free(points);
 

@@ -145,7 +145,7 @@ double kprob2[KTBLSIZE] = {
  2.26719e-07, 4.1078e-08,  6.431e-09,    8.8e-10,    1.2e-10,};
 
 
-int marsaglia_tsang_gcd(Test **test, int irun)
+int marsaglia_tsang_gcd(Test **test, int irun, gsl_rng *cur_rng)
 {
 
  unsigned long long int t,ktbl[KTBLSIZE];
@@ -207,10 +207,10 @@ int marsaglia_tsang_gcd(Test **test, int irun)
    k = 0;
    /* Get nonzero u,v */
    do{
-    u = get_rand_bits_uint(32,0xffffffff,rng);
+    u = get_rand_bits_uint(32,0xffffffff,cur_rng, 0);
    } while(u == 0);
    do{
-    v = get_rand_bits_uint(32,0xffffffff,rng);
+    v = get_rand_bits_uint(32,0xffffffff,cur_rng, 0);
    } while(v == 0);
 
    do{
@@ -310,7 +310,9 @@ int marsaglia_tsang_gcd(Test **test, int irun)
  Vtest_eval(&vtest_k);
  Vtest_eval(&vtest_u);
 
+ test[0]->st_values[irun] = vtest_k.chisq;
  test[0]->pvalues[irun] = vtest_k.pvalue;
+ test[1]->st_values[irun] = vtest_u.chisq;
  test[1]->pvalues[irun] = vtest_u.pvalue;
  
 

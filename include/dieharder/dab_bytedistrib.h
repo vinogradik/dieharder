@@ -5,7 +5,7 @@
 /*
  * function prototype
  */
-int dab_bytedistrib(Test **test, int irun);
+int dab_bytedistrib(Test **test, int irun, gsl_rng *cur_rng);
 
 static Dtest dab_bytedistrib_dtest __attribute__((unused)) = {
   "Byte Distribution",

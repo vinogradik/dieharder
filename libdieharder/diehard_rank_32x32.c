@@ -29,7 +29,7 @@
  */
 #include "static_get_bits.c"
 
-int diehard_rank_32x32(Test **test, int irun)
+int diehard_rank_32x32(Test **test, int irun, gsl_rng *cur_rng)
 {
 
  int i,t,rank;
@@ -90,8 +90,7 @@ int diehard_rank_32x32(Test **test, int irun)
      MYDEBUG(D_DIEHARD_RANK_32x32){
        fprintf(stdout,"# ");
      }
-
-     bitstring = get_rand_bits_uint(32,0xffffffff,rng);
+     bitstring = get_rand_bits_uint(32,0xffffffff, cur_rng, 0);
      mtx[i][0] = bitstring;
 
      MYDEBUG(D_DIEHARD_RANK_32x32){
@@ -119,6 +118,7 @@ int diehard_rank_32x32(Test **test, int irun)
 
  Vtest_eval(&vtest);
  test[0]->pvalues[irun] = vtest.pvalue;
+ test[0]->st_values[irun] = vtest.chisq;
  MYDEBUG(D_DIEHARD_RANK_32x32) {
    printf("# diehard_rank_32x32(): test[0]->pvalues[%u] = %10.5f\n",irun,test[0]->pvalues[irun]);
  }

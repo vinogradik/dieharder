@@ -47,7 +47,7 @@ static double lambda;
 static unsigned int *intervals;
 static unsigned int nms,nbits,kmax;
 
-int diehard_birthdays(Test **test, int irun)
+int diehard_birthdays(Test **test, int irun, gsl_rng *cur_rng)
 {
 
  uint i,k,t,m,mnext;
@@ -135,7 +135,7 @@ int diehard_birthdays(Test **test, int irun)
       *
       * Note -- removed all reference to overlap.
       */
-     get_rand_bits(&rand_uint[m],sizeof(uint),nbits,rng);
+     get_rand_bits(&rand_uint[m],sizeof(uint),nbits,cur_rng);
      MYDEBUG(D_DIEHARD_BDAY){
        printf("  %d-bit int = ",nbits);
        /* Should count dump from the right, sorry */
@@ -245,7 +245,7 @@ int diehard_birthdays(Test **test, int irun)
   * generate a p-value for each cyclic permutation of the bits through the
   * 24 bit mask.
   */
- test[0]->pvalues[irun] = chisq_poisson(js,lambda,kmax,test[0]->tsamples);
+ test[0]->st_values[irun] = test[0]->pvalues[irun] = chisq_poisson(js,lambda,kmax,test[0]->tsamples);
  MYDEBUG(D_DIEHARD_BDAY){
    printf("# diehard_birthdays(): test[0]->pvalues[%u] = %10.5f\n",irun,test[0]->pvalues[irun]);
  }

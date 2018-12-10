@@ -51,7 +51,7 @@ typedef struct {
 int compare_points(const dTuple *a,const dTuple *b);
 double distance(const dTuple a,const dTuple b,uint dim);
 
-int diehard_2dsphere(Test **test, int irun)
+int diehard_2dsphere(Test **test, int irun, gsl_rng *cur_rng)
 {
 
  int i,j,d,t;
@@ -94,7 +94,7 @@ int diehard_2dsphere(Test **test, int irun)
        printf("points[%u]: (",t);
    }
    for(d=0;d<2;d++) {
-     points[t].c[d] = gsl_rng_uniform_pos(rng)*10000;
+     points[t].c[d] = gsl_rng_uniform_pos(cur_rng)*10000;
      if(verbose == D_DIEHARD_2DSPHERE || verbose == D_ALL){
        printf("%6.4f",points[t].c[d]);
        if(d == 1){
@@ -168,6 +168,7 @@ int diehard_2dsphere(Test **test, int irun)
   * its value to 1.0 in rgb_minimum_distance now, couldn't I?
   */
  test[0]->pvalues[irun] = 1.0 - exp(-mindist*mindist/0.995);
+ test[0]->st_values[irun] = mindist;
 
  free(points);
 

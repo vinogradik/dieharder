@@ -5,7 +5,7 @@
 /*
  * function prototype
  */
-int sts_serial(Test **test,int irun);
+int sts_serial(Test **test,int irun, gsl_rng *rng);
 
 static Dtest sts_serial_dtest __attribute__((unused)) = {
   "STS Serial Test (Generalized)",

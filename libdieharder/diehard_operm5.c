@@ -121,7 +121,7 @@ int kperm(uint v[],uint voffset)
 
 }
 
-int diehard_operm5(Test **test, int irun)
+int diehard_operm5(Test **test, int irun, gsl_rng *cur_rng)
 {
 
  int i,j,kp,t,vind;
@@ -142,12 +142,12 @@ int diehard_operm5(Test **test, int irun)
 
  if(overlap){
    for(i=0;i<5;i++){
-     v[i] = gsl_rng_get(rng);
+     v[i] = gsl_rng_get(cur_rng);
    }
    vind = 0;
  } else {
    for(i=0;i<5;i++){
-     v[i] = gsl_rng_get(rng);
+     v[i] = gsl_rng_get(cur_rng);
    }
  }
 
@@ -163,11 +163,11 @@ int diehard_operm5(Test **test, int irun)
   if(overlap){
     kp = kperm(v,vind);
     count[kp] += 1;
-    v[vind] = gsl_rng_get(rng);
+    v[vind] = gsl_rng_get(cur_rng);
     vind = (vind+1)%5;
   } else {
     for(i=0;i<5;i++){
-      v[i] = gsl_rng_get(rng);
+      v[i] = gsl_rng_get(cur_rng);
     }
     kp = kperm(v,0);
     count[kp] += 1;
@@ -236,6 +236,7 @@ int diehard_operm5(Test **test, int irun)
    printf("# diehard_operm5(): chisq[%u] = %10.5f\n",kspi,chisq);
  }
 
+ test[0]->st_values[irun] = chisq;
  test[0]->pvalues[irun] = gsl_sf_gamma_inc_Q((double)(ndof)/2.0,chisq/2.0);
 
  MYDEBUG(D_DIEHARD_OPERM5){

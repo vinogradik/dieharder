@@ -104,6 +104,10 @@
  double chisq_binomial(double *observed,double prob,unsigned int kmax,unsigned int nsamp);
  double chisq_pearson(double *observed,double *expected,int kmax);
  double sample(void *testfunc());
+ /* This new function takes two pointers two arrays of length n and m respectively
+  * and returns ks_pvalue according to two-sample Kolmogorov - Smirnov test.
+  */
+ double two_sample_kstest(double *value, double *ref_value, int n, int m);
  double kstest(double *pvalue,int count);
  double kstest_kuiper(double *pvalue,int count);
  double q_ks(double x);
@@ -273,6 +277,7 @@
   */
  const gsl_rng_type **types;       /* where all the rng types go */
  gsl_rng *rng;               /* global gsl random number generator */
+ gsl_rng *ref_rng;           /* reference random number generator used in two-sample mode */
 
  /*
   * All required for GSL Singular Value Decomposition (to obtain

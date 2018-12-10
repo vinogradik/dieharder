@@ -30,7 +30,7 @@
 #define SAMP_TOTAL (3*SAMP_PER_WORD)
 #define TABLE_SIZE (256 * SAMP_TOTAL)
 
-int dab_bytedistrib(Test **test,int irun) {
+int dab_bytedistrib(Test **test,int irun, gsl_rng *cur_rng) {
  Vtest vtest;
  unsigned int t,i,j;
  unsigned int counts[TABLE_SIZE];
@@ -46,7 +46,7 @@ int dab_bytedistrib(Test **test,int irun) {
      /*
       * Generate a word; this word will be used for SAMP_PER_WORD bytes.
       */
-     unsigned int word = gsl_rng_get(rng);
+     unsigned int word = gsl_rng_get(cur_rng);
      unsigned char currentShift = 0;
      for (j = 0; j < SAMP_PER_WORD; j++) {
 
@@ -88,6 +88,7 @@ int dab_bytedistrib(Test **test,int irun) {
  }
 
  Vtest_eval(&vtest);
+ test[0]->st_values[irun] = vtest.chisq;
  test[0]->pvalues[irun] = vtest.pvalue;
  Vtest_destroy(&vtest);
 

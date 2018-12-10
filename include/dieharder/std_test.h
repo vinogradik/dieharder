@@ -23,10 +23,13 @@ typedef struct {
   double x;            /* Extra variable passed on command line */
   double y;            /* Extra variable passed on command line */
   double z;            /* Extra variable passed on command line */
+  double *st_values;   /* Vector of length psamples to hold underlying statistics values*/
 } Test;
 
 
 Test **create_test(Dtest *dtest, unsigned int tsamples, unsigned int psamples);
 void destroy_test(Dtest *dtest, Test **test);
-void std_test(Dtest *dtest, Test **test);
+
+/* Now we pass two test structures into std_test. We will call two sample kstest inside. */
+void std_test(Dtest *dtest, Test **test, Test **ref_test);
 

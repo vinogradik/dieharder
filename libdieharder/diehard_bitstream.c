@@ -41,7 +41,7 @@
  */
 #include "static_get_bits.c"
 
-int diehard_bitstream(Test **test, int irun)
+int diehard_bitstream(Test **test, int irun, gsl_rng *cur_rng)
 {
 
  uint i,j,t,boffset,coffset;
@@ -82,7 +82,7 @@ int diehard_bitstream(Test **test, int irun)
    ptest.sigma = 428.0;
    bitstream = (uint *)malloc(BS_OVERLAP*sizeof(uint));
    for(i = 0; i < BS_OVERLAP; i++){
-     bitstream[i] = get_rand_bits_uint(32,0xffffffff,rng);
+     bitstream[i] = get_rand_bits_uint(32,0xffffffff,cur_rng, 0);
    }
    MYDEBUG(D_DIEHARD_BITSTREAM) {
      printf("# diehard_bitstream: Filled bitstream with %u rands for overlapping\n",BS_OVERLAP);
@@ -92,7 +92,7 @@ int diehard_bitstream(Test **test, int irun)
    ptest.sigma = 290.0;
    bitstream = (uint *)malloc(BS_NO_OVERLAP*sizeof(uint));
    for(i = 0; i < BS_NO_OVERLAP; i++){
-     bitstream[i] = get_rand_bits_uint(32,0xffffffff,rng);
+     bitstream[i] = get_rand_bits_uint(32,0xffffffff,cur_rng, 0);
    }
    cbitstream = (unsigned char *)bitstream;   /* To allow us to access it by bytes */
    MYDEBUG(D_DIEHARD_BITSTREAM) {
@@ -262,6 +262,7 @@ int diehard_bitstream(Test **test, int irun)
 
  Xtest_eval(&ptest);
  test[0]->pvalues[irun] = ptest.pvalue;
+ test[0]->st_values[irun] = ptest.x;
 
  MYDEBUG(D_DIEHARD_BITSTREAM) {
    printf("# diehard_bitstream(): test[0]->pvalues[%u] = %10.5f\n",irun,test[0]->pvalues[irun]);

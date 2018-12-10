@@ -5,7 +5,7 @@
 /*
  * function prototype
  */
-int diehard_craps(Test **test,int irun);
+int diehard_craps(Test **test,int irun, gsl_rng *cur_rng);
 
 static Dtest diehard_craps_dtest __attribute__((unused)) = {
   "Diehard Craps Test",

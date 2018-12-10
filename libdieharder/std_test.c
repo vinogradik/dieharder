@@ -6,6 +6,10 @@
  */
 
 #include <dieharder/libdieharder.h>
+/* This include is needed to reset get_rand_bits_uint when change rngs
+ * in two sample mode.
+ */
+#include "static_get_bits.c"
 
 /*
  * A standard test returns a single-pass p-value as an end result.
@@ -106,10 +110,14 @@ Test **create_test(Dtest *dtest, uint tsamples,uint psamples)
      pcutoff = newtest[i]->psamples;
    }
    newtest[i]->pvalues = (double *)malloc((size_t)pcutoff*sizeof(double));
+   /* Allocate memory for the array of underlying statistical values. */
+   newtest[i]->st_values = (double *)malloc((size_t)pcutoff*sizeof(double));
    newtest[i]->pvlabel = (char *)malloc((size_t)LINE*sizeof(char));
    snprintf(newtest[i]->pvlabel,LINE,"##################################################################\n");
    for(j=0;j<pcutoff;j++){
      newtest[i]->pvalues[j] = 0.0;
+     /* Set statistical values to default. */
+     newtest[i]->st_values[j] = 0.0;
    }
 
    /*
@@ -150,6 +158,7 @@ void destroy_test(Dtest *dtest, Test **test)
  */
  for(i=0;i<dtest->nkps;i++){
    free(test[i]->pvalues);
+   free(test[i]->st_values);
    free(test[i]->pvlabel);
  }
  /* printf("Freeing all the test structs\n"); */
@@ -212,7 +221,7 @@ void clear_test(Dtest *dtest, Test **test)
  * Note that Xoff MUST remain global, if nothing else.  Otherwise we
  * can run out of allocated headroom in the pvalues vector.
  */
-void add_2_test(Dtest *dtest, Test **test, int count)
+void add_2_test(Dtest *dtest, Test **test, Test **ref_test, int count)
 {
 
  uint i,j,imax;
@@ -227,8 +236,23 @@ void add_2_test(Dtest *dtest, Test **test, int count)
  if(imax > Xoff) imax = Xoff;
  count = imax - test[0]->psamples;
  for(i = test[0]->psamples; i < imax; i++){
-   dtest->test(test,i);
+   /* Now we should tell the test which rng to use.
+    * So we don't use global one and pass it via arguments.
+   */
+   dtest->test(test,i, rng);
  }
+
+ /* If two sample test is enabled, fill ref_test using ref_rng. */
+ if (ks_test == 4) {
+     /* As I could see, get_rand_bits_uint is the only get rand function
+      * that in fact stores some internal state. So it should be reset before
+      * starting tests for the reference rng.
+      */
+     get_rand_bits_uint (0, 0, NULL,1);
+     for(i = test[0]->psamples; i < imax; i++){
+        dtest->test(ref_test,i, ref_rng);
+      }
+  }
 
  for(j = 0;j < dtest->nkps;j++){
    /*
@@ -237,7 +261,15 @@ void add_2_test(Dtest *dtest, Test **test, int count)
     */
    test[j]->psamples += count;
 
-   if(ks_test >= 3){
+   if (ks_test == 4) {
+       /* Now we have two arrays of the same size with st_values from rng and ref_rng.
+        * We compare them using two_sample_ks_test and get the final ks_pvalue.
+        * One value is omitted because then ks_pvalue is less discrete.*/
+	   test[j]->ks_pvalue = (test[j]->psamples > 1)?
+			   two_sample_kstest(test[j]->st_values, ref_test[j]->st_values, test[j]->psamples - 1, test[j]->psamples)
+	           : test[j]->pvalues[0];
+   }
+   else if(ks_test == 3){
      /*
       * This (Kuiper KS) can be selected with -k 3 from the command line.
       * Generally it is ignored.  All smaller values of ks_test are passed
@@ -263,7 +295,7 @@ void add_2_test(Dtest *dtest, Test **test, int count)
  * the second or beyond call, it just adds Xstep more psamples to the
  * vector, up to the cutoff Xoff.
  */
-void std_test(Dtest *dtest, Test **test)
+void std_test(Dtest *dtest, Test **test, Test **ref_test)
 {
 
  int j,count;
@@ -289,8 +321,6 @@ void std_test(Dtest *dtest, Test **test)
    /* Add Xstep more samples */
    count = Xstep;
  }
-
- add_2_test(dtest,test,count);
-
+ add_2_test(dtest,test,ref_test, count);
 }
 

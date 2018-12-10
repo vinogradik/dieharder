@@ -145,7 +145,7 @@ const double ps[]={
 
 #define LSHIFT5(old,new) (old*5 + new)
 
-int diehard_count_1s_stream(Test **test, int irun)
+int diehard_count_1s_stream(Test **test, int irun, gsl_rng *cur_rng)
 {
 
  uint i,j,k,index5=0,index4,letter,t;
@@ -259,7 +259,7 @@ int diehard_count_1s_stream(Test **test, int irun)
   * only.
   */
  if(overlap){
-   i = get_rand_bits_uint(32, 0xFFFFFFFF, rng);
+   i = get_rand_bits_uint(32, 0xFFFFFFFF, cur_rng, 0);
    MYDEBUG(D_DIEHARD_COUNT_1S_STREAM){
      dumpbits(&i,32);
    }
@@ -324,7 +324,7 @@ int diehard_count_1s_stream(Test **test, int irun)
         * We need a new rand to get our next byte.
         */
        boffset = 0;
-       i = get_rand_bits_uint(32, 0xFFFFFFFF, rng);
+       i = get_rand_bits_uint(32, 0xFFFFFFFF, cur_rng, 0);
        if(verbose == D_DIEHARD_COUNT_1S_STREAM || verbose == D_ALL){
          dumpbits(&i,32);
        }
@@ -357,7 +357,7 @@ int diehard_count_1s_stream(Test **test, int irun)
 	  * We need a new rand to get our next byte.
 	  */
          boffset = 0;
-         i = get_rand_bits_uint(32, 0xFFFFFFFF, rng);
+         i = get_rand_bits_uint(32, 0xFFFFFFFF, cur_rng, 0);
          if(verbose == D_DIEHARD_COUNT_1S_STREAM || verbose == D_ALL){
            dumpbits(&i,32);
          }
@@ -403,7 +403,7 @@ int diehard_count_1s_stream(Test **test, int irun)
  MYDEBUG(D_DIEHARD_COUNT_1S_STREAM) {
    printf("vtest4.chisq = %f   vtest5.chisq = %f\n",vtest4.chisq,vtest5.chisq);
  }
- ptest.x = vtest5.chisq - vtest4.chisq;
+ test[0]->st_values[irun] = ptest.x = vtest5.chisq - vtest4.chisq;
 
  Xtest_eval(&ptest);
  test[0]->pvalues[irun] = ptest.pvalue;

@@ -166,6 +166,11 @@ void parsecl(int argc, char **argv)
        break;
      case 'k':
        ks_test = strtol(optarg,(char **) NULL,10);
+       if(ks_test == 4)
+           /* Now reference rng is the data from the file, so
+            * filename is required for correct work.
+            */
+    	   fromfile = 1;
        break;
      case 'l':
        list = YES;

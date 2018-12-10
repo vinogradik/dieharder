@@ -35,7 +35,7 @@
 
 #include <dieharder/libdieharder.h>
 
-int rgb_kstest_test(Test **test, int irun)
+int rgb_kstest_test(Test **test, int irun, gsl_rng *cur_rng)
 {
 
  uint t,tsamples;
@@ -52,7 +52,7 @@ int rgb_kstest_test(Test **test, int irun)
    /*
     * Generate and (conditionally) print out a point.
     */
-   testvec[t] = gsl_rng_uniform_pos(rng);
+   testvec[t] = gsl_rng_uniform_pos(cur_rng);
    if(verbose == D_RGB_KSTEST_TEST || verbose == D_ALL){
        printf("testvec[%u] = %f",t,testvec[t]);
    }
@@ -71,6 +71,7 @@ int rgb_kstest_test(Test **test, int irun)
    test[0]->pvalues[irun] = kstest(testvec,tsamples);
  }
 
+ test[0]->st_values[irun] = test[0]->pvalues[irun];
  free(testvec);
 
  if(verbose == D_RGB_KSTEST_TEST || verbose == D_ALL){

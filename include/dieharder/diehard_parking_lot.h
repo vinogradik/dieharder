@@ -5,7 +5,7 @@
 /*
  * function prototype
  */
-int diehard_parking_lot(Test **test,int irun);
+int diehard_parking_lot(Test **test,int irun, gsl_rng *cur_rng);
 
 static Dtest diehard_parking_lot_dtest __attribute__((unused)) = {
   "Diehard Parking Lot Test",

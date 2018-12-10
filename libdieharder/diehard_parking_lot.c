@@ -72,7 +72,7 @@ typedef struct {
   double y;
 } Cars;
 
-int diehard_parking_lot(Test **test, int irun)
+int diehard_parking_lot(Test **test, int irun, gsl_rng *cur_rng)
 {
 
  /*
@@ -106,8 +106,8 @@ int diehard_parking_lot(Test **test, int irun)
  /*
   * Park a single car to have something to avoid and count it.
   */
- parked[0].x = 100.0*gsl_rng_uniform(rng);
- parked[0].y = 100.0*gsl_rng_uniform(rng);
+ parked[0].x = 100.0*gsl_rng_uniform(cur_rng);
+ parked[0].y = 100.0*gsl_rng_uniform(cur_rng);
  k = 1;
  
 
@@ -117,8 +117,8 @@ int diehard_parking_lot(Test **test, int irun)
   * successes.  We brute force the crash test.
   */
  for(n=1;n<12000;n++){
-   xtry = 100.0*gsl_rng_uniform(rng);
-   ytry = 100.0*gsl_rng_uniform(rng);
+   xtry = 100.0*gsl_rng_uniform(cur_rng);
+   ytry = 100.0*gsl_rng_uniform(cur_rng);
    crashed = 0;
    for(i=0;i<k;i++){
      /*
@@ -145,6 +145,7 @@ int diehard_parking_lot(Test **test, int irun)
 
  ptest.x = (double)k;
  Xtest_eval(&ptest);
+ test[0]->st_values[irun] = ptest.x;
  test[0]->pvalues[irun] = ptest.pvalue;
 
  MYDEBUG(D_DIEHARD_PARKING_LOT) {

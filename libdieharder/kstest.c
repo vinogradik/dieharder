@@ -17,8 +17,137 @@
 
 #include <dieharder/libdieharder.h>
 #define KCOUNTMAX 4999
+/* Threshold: whether to use precise or asymptotic
+ * version of two sample method
+ */
+#define K2COUNTMAX 10000
+#define M_1_SQRT_2PI 0.398942280401432677939946059934
 
 double p_ks_new(int n,double d);
+/* Code taken from dgof package (R-language). */ 
+/* Two-sample two-sided asymptotic distribution */
+double pkstwo(double x)
+{
+/* x[1:n] is input and output
+ *
+ * Compute
+ *   \sum_{k=-\infty}^\infty (-1)^k e^{-2 k^2 x^2}
+ *   = 1 + 2 \sum_{k=1}^\infty (-1)^k e^{-2 k^2 x^2}
+ *   = \frac{\sqrt{2\pi}}{x} \sum_{k=1}^\infty \exp(-(2k-1)^2\pi^2/(8x^2))
+ *
+ * See e.g. J. Durbin (1973), Distribution Theory for Tests Based on the
+ * Sample Distribution Function.  SIAM.
+ *
+ * The 'standard' series expansion obviously cannot be used close to 0;
+ * we use the alternative series for x < 1, and a rather crude estimate
+ * of the series remainder term in this case, in particular using that
+ * ue^(-lu^2) \le e^(-lu^2 + u) \le e^(-(l-1)u^2 - u^2+u) \le e^(-(l-1))
+ * provided that u and l are >= 1.
+ *
+ * (But note that for reasonable tolerances, one could simply take 0 as
+ * the value for x < 0.2, and use the standard expansion otherwise.)
+ *
+ */
+	double tol = 1e-6;
+    double new, old, s, w, z;
+    int k, k_max;
+
+    k_max = (int) sqrt(2 - log(tol));
+
+
+	if(x < 1) {
+	    z = - (M_PI_2 * M_PI_4) / (x * x);
+	    w = log(x);
+	    s = 0;
+	    for(k = 1; k < k_max; k += 2) {
+	    	s += exp(k * k * z - w);
+	    }
+	    x = s / M_1_SQRT_2PI;
+	}
+	else {
+	    z = -2 * x * x;
+	    s = -1;
+	    k = 1;
+	    old = 0;
+	    new = 1;
+	    while(fabs(old - new) > tol) {
+	    	old = new;
+	    	new += 2 * s * exp(z * k * k);
+	    	s *= -1;
+	    	k++;
+	    }
+	    x = new;
+	}
+	return x;
+}
+
+/* Two-sided two-sample */
+double psmirnov2x(double x, int m, int n)
+{
+    double md, nd, q, *u, w;
+    int i, j;
+
+    if(m > n) {
+	i = n; n = m; m = i;
+    }
+    md = (double) (m);
+    nd = (double) (n);
+    /*
+       q has 0.5/mn added to ensure that rounding error doesn't
+       turn an equality into an inequality, eg abs(1/2-4/5)>3/10
+
+    */
+    q = (0.5 + floor(x * md * nd - 1e-7)) / (md * nd);
+    u = (double *) malloc((n + 1) * sizeof(double));
+
+    for(j = 0; j <= n; j++) {
+	u[j] = ((j / nd) > q) ? 0 : 1;
+    }
+    for(i = 1; i <= m; i++) {
+	w = (double)(i) / ((double)(i + n));
+	if((i / md) > q)
+	    u[0] = 0;
+	else
+	    u[0] = w * u[0];
+	for(j = 1; j <= n; j++) {
+	    if(fabs(i / md - j / nd) > q)
+		u[j] = 0;
+	    else
+		u[j] = w * u[j] + u[j - 1];
+	}
+    }
+    double result = u[n];
+    free(u);
+    return (result);
+}
+
+double two_sample_kstest(double *value, double *ref_value, int m, int n){
+	if (m < 1)
+		return -1;
+	gsl_sort(value,1,m);
+	gsl_sort(ref_value,1,n);
+	int r = 0;
+	int pos = 0;
+	double cur_val = 0;
+	double max_diff = 0;
+	for (int r = 0; r < m; r++) {
+		while (value[r] > ref_value[pos] && pos < n)
+			pos++;
+		double d_1 = fabs((r + 1.0) / m - (pos + ((ref_value[pos] - value[r] < 1e-10)? 1.0 : 0.0)) / n);
+		if (max_diff < d_1)
+			max_diff = d_1;
+		double d_2 = fabs((double)pos / n - (double)r / m);
+	    if (max_diff < d_2)
+		    max_diff = d_2;
+	}
+
+	long int max = n * m;
+    if (max < K2COUNTMAX)
+    	return 1 - psmirnov2x(max_diff, m, n);
+
+    double Klm = sqrt((double)max / (n + m)) * max_diff;
+    return (1 - pkstwo(Klm));
+}
 
 double kstest(double *pvalue,int count)
 {

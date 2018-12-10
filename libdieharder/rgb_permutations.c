@@ -16,7 +16,7 @@ uint nperms;
 double fpipi(int pi1,int pi2,int nkp);
 uint rgb_permutations_k;
 
-int rgb_permutations(Test **test,int irun)
+int rgb_permutations(Test **test,int irun, gsl_rng *cur_rng)
 {
 
  uint i,k,permindex=0,t;
@@ -103,7 +103,7 @@ int rgb_permutations(Test **test,int irun)
     * To sort into a perm, test vector needs to be double.
     */
    for(i=0;i<k;i++) {
-     testv[i] = (double) gsl_rng_get(rng);
+     testv[i] = (double) gsl_rng_get(cur_rng);
      MYDEBUG(D_RGB_PERMUTATIONS){
        printf("# rgb_permutations: testv[%u] = %u\n",i,(uint) testv[i]);
      }
@@ -146,6 +146,7 @@ int rgb_permutations(Test **test,int irun)
 
  Vtest_eval(&vtest);
  test[0]->pvalues[irun] = vtest.pvalue;
+ test[0]->st_values[irun] = vtest.chisq;
  MYDEBUG(D_RGB_PERMUTATIONS) {
    printf("# rgb_permutations(): test[0]->pvalues[%u] = %10.5f\n",irun,test[0]->pvalues[irun]);
  }

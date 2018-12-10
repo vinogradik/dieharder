@@ -29,7 +29,7 @@ typedef struct {
   double x[DIM_3D];
 } C3_3D;
  
-int diehard_3dsphere(Test **test, int irun)
+int diehard_3dsphere(Test **test, int irun, gsl_rng *cur_rng)
 {
 
  int j,k;
@@ -59,7 +59,7 @@ int diehard_3dsphere(Test **test, int irun)
    /*
     * Generate a new point in the cube.
     */
-   for(k=0;k<DIM_3D;k++) c3[j].x[k] = 1000.0*gsl_rng_uniform_pos(rng);
+   for(k=0;k<DIM_3D;k++) c3[j].x[k] = 1000.0*gsl_rng_uniform_pos(cur_rng);
    if(verbose == D_DIEHARD_3DSPHERE || verbose == D_ALL){
      printf("%d: (%8.2f,%8.2f,%8.2f)\n",j,c3[j].x[0],c3[j].x[1],c3[j].x[2]);
    }
@@ -90,6 +90,7 @@ int diehard_3dsphere(Test **test, int irun)
    printf("Found rmin = %f  (r^3 = %f)\n",rmin,r3min);
  }
  test[0]->pvalues[irun] = 1.0 - exp(-r3min/30.0);
+ test[0]->st_values[irun] = r3min;
 
  MYDEBUG(D_DIEHARD_3DSPHERE) {
    printf("# diehard_3dsphere(): test[0]->pvalues[%u] = %10.5f\n",irun,test[0]->pvalues[irun]);

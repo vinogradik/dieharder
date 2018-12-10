@@ -39,7 +39,7 @@
 
 #include <dieharder/libdieharder.h>
 
-int diehard_opso(Test **test, int irun)
+int diehard_opso(Test **test, int irun, gsl_rng *cur_rng)
 {
 
  uint j0=0,k0=0,j,k,t;
@@ -106,8 +106,8 @@ int diehard_opso(Test **test, int irun)
     * the test[0]->tsamples loop at test[0]->tsamples = 2^15...
     */
    if(t%2 == 0) {
-     j0 = gsl_rng_get(rng);
-     k0 = gsl_rng_get(rng);
+     j0 = gsl_rng_get(cur_rng);
+     k0 = gsl_rng_get(cur_rng);
      j = j0 & 0x03ff;
      k = k0 & 0x03ff;
    } else {
@@ -137,6 +137,7 @@ int diehard_opso(Test **test, int irun)
    printf("%f %f %f\n",ptest.y,ptest.x,ptest.x-ptest.y);
  }
 
+ test[0]->st_values[irun] = ptest.x;
  Xtest_eval(&ptest);
  test[0]->pvalues[irun] = ptest.pvalue;
 
