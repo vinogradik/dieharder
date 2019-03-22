@@ -121,7 +121,7 @@ int kperm(uint v[],uint voffset)
 
 }
 
-int diehard_operm5(Test **test, int irun, gsl_rng *cur_rng)
+int diehard_operm5(Test **test, int irun, random_generator_t *cur_rng)
 {
 
  int i,j,kp,t,vind;
@@ -142,12 +142,12 @@ int diehard_operm5(Test **test, int irun, gsl_rng *cur_rng)
 
  if(overlap){
    for(i=0;i<5;i++){
-     v[i] = gsl_rng_get(cur_rng);
+     v[i] = gsl_rng_get(cur_rng->rng);
    }
    vind = 0;
  } else {
    for(i=0;i<5;i++){
-     v[i] = gsl_rng_get(cur_rng);
+     v[i] = gsl_rng_get(cur_rng->rng);
    }
  }
 
@@ -163,11 +163,11 @@ int diehard_operm5(Test **test, int irun, gsl_rng *cur_rng)
   if(overlap){
     kp = kperm(v,vind);
     count[kp] += 1;
-    v[vind] = gsl_rng_get(cur_rng);
+    v[vind] = gsl_rng_get(cur_rng->rng);
     vind = (vind+1)%5;
   } else {
     for(i=0;i<5;i++){
-      v[i] = gsl_rng_get(cur_rng);
+      v[i] = gsl_rng_get(cur_rng->rng);
     }
     kp = kperm(v,0);
     count[kp] += 1;

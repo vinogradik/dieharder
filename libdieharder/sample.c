@@ -40,7 +40,7 @@
 
 #include <dieharder/libdieharder.h>
 
-double sample(void *testfunc())
+double sample(void *testfunc(), random_generator_t *cur_rng)
 {
 
  int p;
@@ -56,8 +56,10 @@ double sample(void *testfunc())
     * specified on the command line.
     */
    if(fromfile == 0 && Seed == 0){
-     seed = random_seed();
-     gsl_rng_set(rng,seed);
+     for (int i = 0; i < cur_rng->params.gscount; i++) {
+       cur_rng->params.gseeds[i] = random_seed();
+     }
+     gsl_rng_set(cur_rng->rng,cur_rng->params.gseeds[0]);
    }
 
      

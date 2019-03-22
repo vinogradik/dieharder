@@ -5,7 +5,7 @@
 /*
  * function prototype
  */
-int diehard_count_1s_byte(Test **test,int irun, gsl_rng *cur_rng);
+int diehard_count_1s_byte(Test **test,int irun, random_generator_t *cur_rng);
 
 static Dtest diehard_count_1s_byte_dtest __attribute__((unused)) = {
   "Diehard Count the 1s Test (byte)",

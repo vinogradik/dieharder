@@ -74,7 +74,7 @@ static double b[6] = {
  29.0/5040.0,
  1.0/840.0,};
 
-int diehard_runs(Test **test, int irun, gsl_rng *cur_rng)
+int diehard_runs(Test **test, int irun, random_generator_t *cur_rng)
 {
 
  int i,j,k,t;
@@ -106,9 +106,9 @@ int diehard_runs(Test **test, int irun, gsl_rng *cur_rng)
  if(verbose){
    printf("j    rand    ucount  dcount\n");
  }
- first = last = gsl_rng_get(cur_rng);
+ first = last = gsl_rng_get(cur_rng->rng);
  for(t=1;t<test[0]->tsamples;t++) {
-   next = gsl_rng_get(cur_rng);
+   next = gsl_rng_get(cur_rng->rng);
    if(verbose){
      printf("%d:  %10u   %u    %u\n",t,next,ucount,dcount);
    }

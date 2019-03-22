@@ -12,7 +12,7 @@
 
 #include <dieharder/libdieharder.h>
 
-void marsaglia_tsang_gorilla(Test **test, int irun)
+void marsaglia_tsang_gorilla(Test **test, int irun, random_generator_t *cur_rng)
 {
 
  uint t,i,lag;
@@ -49,10 +49,10 @@ void marsaglia_tsang_gorilla(Test **test, int irun)
     */
 
    /* Throw away lag-1 per sample */
-   for(i=0;i<(lag-1);i++) gsl_rng_uniform(rng);
+   for(i=0;i<(lag-1);i++) gsl_rng_uniform(cur_rng->rng);
 
    /* sample only every lag numbers, reset counter */
-   ptest.x += gsl_rng_uniform(rng);
+   ptest.x += gsl_rng_uniform(cur_rng->rng);
 
  }
 

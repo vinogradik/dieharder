@@ -14,7 +14,7 @@
 
 #include "dieharder.h"
 
-int select_rng(int gennum,char *genname,unsigned int initial_seed);
+int select_rng(random_generator_t *cur_rng);
 
 void choose_rng()
 {
@@ -57,17 +57,21 @@ void choose_rng()
   * MUST FIX THIS for the new combo multigenerator.  All broken.  At least
   * this should force the output of generator names as usual, though.
   */
- if(select_rng(generator,generator_name,Seed) < 0){
+ if(select_rng(&generator) < 0){
    list_rngs();
    Exit(0);
  }
+
+
+ etalon_enabled = (select_rng(&etalon_generator) != -1);
+
 
  /*
   * This may or may not belong here.  We may move it somewhere else
   * if it needs to go.  But it should WORK here, at least for the moment.
   */
  if(output_file){
-   output_rnds();
+   output_rnds(&generator);
    Exit(0);
  }
 
@@ -96,73 +100,99 @@ void choose_rng()
  * ========================================================================
  */
 
-int select_rng(int gennum,char *genname,unsigned int initial_seed)
+int select_rng(random_generator_t *cur_rng)
 {
-
- int i;
-
- /*
-  * REALLY out of bounds we can just test for and return an error.
-  */
- if((int) gnumbs[0] < 0 || (int) gnumbs[0] >= MAXRNGS){
-   return(-1);
- }
-
- /*
-  * We are FINALLY ready, I think, to implement the super/vector generator
-  * as soon as we get the talk all together and ready to go...
-  *     (start here)  
-  * See if a gennum name has been set (genname not null).  If
-  * so, loop through all the gennums in dh_rng_types looking for a
-  * match and return a hit if there is one.  Note that this
-  * routine just sets gennum and passes a (presumed valid)
-  * gennum on for further processing, hence it has to be first.
-  */
- if(gnames[0][0] != 0){
-   gennum = -1;
-   for(i=0;i<1000;i++){
-     if(dh_rng_types[i]){
-       if(strncmp(dh_rng_types[i]->name,gnames[0],20) == 0){
-         gennum = i;
-         break;
-       }
-     }
+  input_params_t *params = &cur_rng->params;
+  if (params->gvcount == 0) {
+    return -1;
+  }
+//FILL GENERATOR VECTOR
+ for(int j = 0;j < params->gvcount;j++){
+    if(params->gnames[j][0] != 0){
+     params->gnumbs[j] = MAXRNGS;
+      for(int i=0;i<1000;i++){
+        if(dh_rng_types[i]){
+          if(strncmp(dh_rng_types[i]->name, params->gnames[j],20) == 0){
+          params->gnumbs[j] = i;
+            break;
+          }
+        }
+      }
+    }
+    unsigned int gennum = params->gnumbs[j];
+    if(gennum >= MAXRNGS){
+      return(-1);
    }
-   if(gennum == -1) return(-1);
- } else if(dh_rng_types[gnumbs[0]] != 0){
-   /*
-    * If we get here, then we are entering a gennum type by number.
-    * We check to be sure there is a gennum with the given
-    * number that CAN be used and return an error if there isn't.
-    */
-   gennum = gnumbs[0];
-   if(dh_rng_types[gennum]->name[0] == 0){
+
+   if(dh_rng_types[gennum] != 0){
      /*
-      * No generator with this name.
+      * If we get here, then we are entering a gennum type by number.
+      * We check to be sure there is a gennum with the given
+      * number that CAN be used and return an error if there isn't.
+      */
+     if(dh_rng_types[gennum]->name[0] == 0){
+       /*
+        * No generator with this name.
+        */
+       return(-1);
+     }
+   } else {
+     /*
+      * Couldn't find a generator at all.  Should really never get here.
       */
      return(-1);
    }
- } else {
-   /*
-    * Couldn't find a generator at all.  Should really never get here.
-    */
-   return(-1);
+   if (params->gnumbs[0] == 207) {
+     if (params->gvcount == 1) {
+       fprintf(stderr,"Error: no generators for XOR\n");
+       return -1;
+     }
+     if (j != 0 && params->gnumbs[j] == 207) {
+       fprintf(stderr, "Error: multiple XOR generator\n");
+       return -1;
+     }
+   }
+ }
+ unsigned int gscount = 1;
+ if (params->gnumbs[0] == 207) {
+   gscount = params->gvcount - 1;
  }
 
- /*
-  * We need a sanity check for file input.  File input is permitted
-  * iff we have a file name, if the output flag is not set, AND if
-  * gennum is either file_input or file_input_raw.  Otherwise
-  * IF gennum is a file input type (primary condition) we punt.
-  *
-  * For the moment we actually return an error message, but we may
-  * want to pass the message back in a shared error buffer that
-  * rdh can pick up or ignore, ditto dh, on a -1 return.
-  */
- if(strncmp("file_input",dh_rng_types[gennum]->name,10) == 0){
-   if(fromfile != 1){
-     fprintf(stderr,"Error: gennum %s uses file input but no filename has been specified",dh_rng_types[gennum]->name);
-     return(-1);
+ //FILL SEEDS
+ Seed = params->gseeds[0];
+ if (Seed == 0) {
+   for (int i = 0; i < gscount; i++) {
+     params->gseeds[i] = random_seed();
+   }
+ }
+ else {
+   for (int i = 0; i < params->gscount - 1; i++) {
+     params->gseeds[i] = params->gseeds[i + 1];
+   }
+   if (params->gscount < gscount) {
+     gsl_rng *temp_rng = gsl_rng_alloc(dh_rng_types[14]);
+     gsl_rng_set(temp_rng, Seed);
+     for (int i = params->gscount; i < gscount; i++) {
+       params->gseeds[i] = gsl_rng_get(temp_rng);
+     }
+     fprintf(stderr,"Warning: some seeds were generated using %s generator\n",dh_rng_types[14]->name);
+     gsl_rng_free(temp_rng);
+   }
+ }
+ params->gscount = gscount;
+
+ //FILL FILENAMES
+ int cur_fnum = 0;
+ for (int i = 0; i < gscount; i++) {
+   int cur_gnum = params->gnumbs[i + (params->gnumbs[0] == 207)];
+   params->gfilenum[i] = GVECMAX;
+   if(strncmp("file_input",dh_rng_types[cur_gnum]->name,10) == 0){
+     if(cur_fnum >= params->fcount){
+       fprintf(stderr,"Error: gennum %s uses file input but no filename has been specified\n",dh_rng_types[cur_gnum]->name);
+       return(-1);
+     }
+     params->gfilenum[i] = cur_fnum;
+     cur_fnum++;
    }
  }
 
@@ -174,11 +204,11 @@ int select_rng(int gennum,char *genname,unsigned int initial_seed)
   * has just changed rngs, and that we need to free the previous rng and
   * reset the bits buffers so they are empty.
   */
- if(rng){
+ if(cur_rng->rng){
    MYDEBUG(D_SEED){
-     fprintf(stdout,"# choose_rng(): freeing old gennum %s\n",gsl_rng_name(rng));
+     fprintf(stdout,"# choose_rng(): freeing old gennum %s\n",gsl_rng_name(cur_rng->rng));
    }
-   gsl_rng_free(rng);
+   gsl_rng_free(cur_rng->rng);
    reset_bit_buffers();
  }
 
@@ -187,15 +217,13 @@ int select_rng(int gennum,char *genname,unsigned int initial_seed)
   * without leaking memory.
   */
  MYDEBUG(D_SEED){
-   fprintf(stdout,"# choose_rng(): Creating and seeding gennum %s\n",dh_rng_types[gennum]->name);
+   fprintf(stdout,"# choose_rng(): Creating and seeding gennum %s\n",dh_rng_types[params->gnumbs[0]]->name);
  }
- rng = gsl_rng_alloc(dh_rng_types[gennum]);
+ cur_rng->rng = wrap_gsl_rng_alloc(params, 0);
 
  /* For now, we tested two sample method with the reference data from file.
   * In future command line can be upgraded, so user can choose ref_rng number.
   */
- if (ks_test == 4)
-	 ref_rng = gsl_rng_alloc(dh_rng_types[201]);
 
  /*
   * OK, here's the deal on seeds.  If strategy = 0, we set the seed
@@ -233,32 +261,16 @@ int select_rng(int gennum,char *genname,unsigned int initial_seed)
   * actually seed from the variable seed, not Seed (which then remembers
   * the value as long as it remains valid).
   */
- if(Seed == 0){
-   seed = random_seed();
-   MYDEBUG(D_SEED){
-     fprintf(stdout,"# choose_rng(): Generating random seed %lu\n",seed);
-   }
- } else {
-   seed = Seed;
-   MYDEBUG(D_SEED){
-     fprintf(stdout,"# choose_rng(): Setting fixed seed %lu\n",seed);
-   }
- }
-
  /*
   * Set the seed.  We do this here just so it is set for the timing
   * test.  It may or may not ever be reset.
   */
- gsl_rng_set(rng,seed);
-
- if(ks_test == 4)
- 	   gsl_rng_set(ref_rng, seed);
-
+ gsl_rng_set(cur_rng->rng,params->gseeds[0]);
  /*
   * Here we evaluate the speed of the generator if the rate flag is set.
   */
  if(tflag & TRATE){
-   time_rng();
+   time_rng(cur_rng);
  }
 
  /*
@@ -269,15 +281,15 @@ int select_rng(int gennum,char *genname,unsigned int initial_seed)
   * components of the rng object (difficult to do given that the latter is
   * actually already defined in the GSL, admittedly).
   */
- random_max = gsl_rng_max(rng);
- rmax = random_max;
- rmax_bits = 0;
- rmax_mask = 0;
- while(rmax){
-   rmax >>= 1;
-   rmax_mask = rmax_mask << 1;
-   rmax_mask++;
-   rmax_bits++;
+ cur_rng->random_max = gsl_rng_max(cur_rng->rng);
+ cur_rng->rmax = cur_rng->random_max;
+ cur_rng->rmax_bits = 0;
+ cur_rng->rmax_mask = 0;
+ while(cur_rng->rmax){
+   cur_rng->rmax >>= 1;
+   cur_rng->rmax_mask = cur_rng->rmax_mask << 1;
+   cur_rng->rmax_mask++;
+   cur_rng->rmax_bits++;
  }
 
  /*
@@ -299,11 +311,12 @@ int select_rng(int gennum,char *genname,unsigned int initial_seed)
  * ========================================================================
  */
 
-int select_XOR()
+int select_XOR(random_generator_t *cur_rng)
 {
 
  int i,j;
  int one_file;
+ input_params_t *params = &cur_rng->params;
 
  /*
   * See if a gennum name has been set (genname not null).  If
@@ -312,18 +325,18 @@ int select_XOR()
   * routine just sets gennum and passes a (presumed valid)
   * gennum on for further processing, hence it has to be first.
   */
- for(j = 0;j < gvcount;j++){
-   if(gnames[j][0] != 0){
-     gnumbs[j] = -1;
+ for(j = 0;j < params->gvcount;j++){
+   if(params->gnames[j][0] != 0){
+     params->gnumbs[j] = -1;
      for(i=0;i<1000;i++){
        if(dh_rng_types[i]){
-         if(strncmp(dh_rng_types[i]->name,gnames[j],20) == 0){
-           gnumbs[j] = i;
+         if(strncmp(dh_rng_types[i]->name,params->gnames[j],20) == 0){
+           params->gnumbs[j] = i;
            break;
          }
        }
      }
-     if(gnumbs[j] == -1) return(-1);
+     if(params->gnumbs[j] == -1) return(-1);
    }
 
  }
@@ -334,9 +347,9 @@ int select_XOR()
   * return an error if any of them can't.
   */
  one_file = 0;
- for(j = 0;j < gvcount;j++){
+ for(j = 0;j < params->gvcount;j++){
 
-   if(dh_rng_types[gnumbs[j]] == 0){
+   if(dh_rng_types[params->gnumbs[j]] == 0){
      return(-1);
    }
 
@@ -345,10 +358,10 @@ int select_XOR()
     * iff we have a file name AND if gnumbs[j] is either file_input or
     * file_input_raw.
     */
-   if(strncmp("file_input",dh_rng_types[gnumbs[j]]->name,10) == 0){
+   if(strncmp("file_input",dh_rng_types[params->gnumbs[j]]->name,10) == 0){
      one_file++;
      if(fromfile != 1 || one_file > 1){
-       fprintf(stderr,"Error: generator %s uses file input but no filename has been specified",dh_rng_types[gnumbs[j]]->name);
+       fprintf(stderr,"Error: generator %s uses file input but no filename has been specified",dh_rng_types[params->gnumbs[j]]->name);
        return(-1);
      }
    }
@@ -364,11 +377,11 @@ int select_XOR()
   * need to free the previous rng and reset the bits buffers so they are
   * empty.
   */
- if(rng){
+ if(cur_rng->rng){
    MYDEBUG(D_SEED){
-     fprintf(stdout,"# choose_rng(): freeing old gennum %s\n",gsl_rng_name(rng));
+     fprintf(stdout,"# choose_rng(): freeing old gennum %s\n",gsl_rng_name(cur_rng->rng));
    }
-   gsl_rng_free(rng);
+   gsl_rng_free(cur_rng->rng);
    reset_bit_buffers();
  }
 
@@ -378,13 +391,13 @@ int select_XOR()
   */
  MYDEBUG(D_SEED){
  }
- for(j = 0;j < gvcount;j++){
-   fprintf(stdout,"# choose_XOR(): generator[%i] = %s\n",j,dh_rng_types[gnumbs[j]]->name);
+ for(j = 0;j < params->gvcount;j++){
+   fprintf(stdout,"# choose_XOR(): generator[%i] = %s\n",j,dh_rng_types[params->gnumbs[j]]->name);
  }
  /*
   * Change 14 to the actual number
   */
- rng = gsl_rng_alloc(dh_rng_types[14]);
+ cur_rng->rng = gsl_rng_alloc(dh_rng_types[14]);
 
  /*
   * OK, here's the deal on seeds.  If strategy = 0, we set the seed
@@ -422,15 +435,14 @@ int select_XOR()
   * actually seed from the variable seed, not Seed (which then remembers
   * the value as long as it remains valid).
   */
- if(Seed == 0){
-   seed = random_seed();
+ if(params->gseeds[0] == 0){
+   params->gseeds[0] = random_seed();
    MYDEBUG(D_SEED){
-     fprintf(stdout,"# choose_rng(): Generating random seed %lu\n",seed);
+     fprintf(stdout,"# choose_rng(): Generating random seed %lu\n",params->gseeds[0]);
    }
  } else {
-   seed = Seed;
    MYDEBUG(D_SEED){
-     fprintf(stdout,"# choose_rng(): Setting fixed seed %lu\n",seed);
+     fprintf(stdout,"# choose_rng(): Setting fixed seed %lu\n", params->gseeds[0]);
    }
  }
 
@@ -438,28 +450,28 @@ int select_XOR()
   * Set the seed.  We do this here just so it is set for the timing
   * test.  It may or may not ever be reset.
   */
- gsl_rng_set(rng,seed);
+ gsl_rng_set(cur_rng->rng,params->gseeds[0]);
 
  /*
   * Here we evaluate the speed of the generator if the rate flag is set.
   */
  if(tflag & TRATE){
-   time_rng();
+   time_rng(cur_rng);
  }
 
  /*
   * We don't really need this anymore, I don't think.  But we'll leave it
   * for now.
   */
- random_max = gsl_rng_max(rng);
- rmax = random_max;
- rmax_bits = 0;
- rmax_mask = 0;
- while(rmax){
-   rmax >>= 1;
-   rmax_mask = rmax_mask << 1;
-   rmax_mask++;
-   rmax_bits++;
+ cur_rng->random_max = gsl_rng_max(cur_rng->rng);
+ cur_rng->rmax = cur_rng->random_max;
+ cur_rng->rmax_bits = 0;
+ cur_rng->rmax_mask = 0;
+ while(cur_rng->rmax){
+   cur_rng->rmax >>= 1;
+   cur_rng->rmax_mask = cur_rng->rmax_mask << 1;
+   cur_rng->rmax_mask++;
+   cur_rng->rmax_bits++;
  }
 
  /*

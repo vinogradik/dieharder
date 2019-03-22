@@ -37,7 +37,7 @@
  * where of course the strings are actually returned as e.g.
  *     00000000000000000000000000000110  (unsigned int).
  */
-unsigned int get_bit_ntuple(unsigned int *bitstring,unsigned int bslen,unsigned int blen,unsigned int boffset)
+unsigned int get_bit_ntuple(unsigned int *bitstring,unsigned int bslen,unsigned int blen,unsigned int boffset, random_generator_t *cur_rng)
 {
 
  unsigned int b,rlen;
@@ -79,7 +79,7 @@ unsigned int get_bit_ntuple(unsigned int *bitstring,unsigned int bslen,unsigned 
   * from the RIGHT is to be found in bitstring[2]. Put this uint
   * into result to work on further.
   */
- ioffset = bslen - (unsigned int) boffset/rmax_bits - 1;
+ ioffset = bslen - (unsigned int) boffset/cur_rng->rmax_bits - 1;
  result = bitstring[ioffset];
  if(verbose == D_BITS || verbose == D_ALL){
    printf("bitstring[%d] = %u\n",ioffset,result);
@@ -92,7 +92,7 @@ unsigned int get_bit_ntuple(unsigned int *bitstring,unsigned int bslen,unsigned 
   * For example 30%24 = 6, so in the continuing example it would
   * be bit 6 in result.
   */
- boffset = boffset%rmax_bits;
+ boffset = boffset%cur_rng->rmax_bits;
  if(verbose == D_BITS || verbose == D_ALL){
    printf("Shifting to bit offset %u\n",boffset);
  }
@@ -115,7 +115,7 @@ unsigned int get_bit_ntuple(unsigned int *bitstring,unsigned int bslen,unsigned 
   * would start in bitstring[2] and get 2 bits (30 and 31), get all 16 bits
   * from bitstring[1], and still need 12 bits of bitstring[0] to return.
   */
- rlen = rmax_bits - boffset;
+ rlen = cur_rng->rmax_bits - boffset;
  if(verbose == D_BITS || verbose == D_ALL){
    printf("Cumulated %u signifcant bits\n",rlen);
  }
@@ -154,7 +154,7 @@ unsigned int get_bit_ntuple(unsigned int *bitstring,unsigned int bslen,unsigned 
     * to rlen).
     */
    result += carry;
-   rlen += rmax_bits;
+   rlen += cur_rng->rmax_bits;
    if(verbose == D_BITS || verbose == D_ALL){
      printf("Cumulated %u signifcant bits\n",rlen);
      printf("result+carry =            ");
@@ -274,7 +274,7 @@ void cycle(unsigned int *data, unsigned int nbits)
  * This is still a good idea, but we have to modify it so that it ONLY
  * gets VALID bits by their absolute index.
  */
-int get_bit(unsigned int *rand_uint, unsigned int n)
+int get_bit(unsigned int *rand_uint, unsigned int n, unsigned int rmax_bits)
 {
 
  unsigned int index,offset,mask;
@@ -393,7 +393,7 @@ unsigned int bit2uint(char *abit,unsigned int blen)
 
 }
 
-void fill_uint_buffer(unsigned int *data,unsigned int buflength)
+void fill_uint_buffer(unsigned int *data,unsigned int buflength, random_generator_t *cur_rng)
 {
 
  /*
@@ -411,20 +411,20 @@ void fill_uint_buffer(unsigned int *data,unsigned int buflength)
   * Number of bits we must generate.
   */
  bufbits = buflength*sizeof(unsigned int)*CHAR_BIT;
- bdelta = sizeof(unsigned int)*CHAR_BIT - rmax_bits;
+ bdelta = sizeof(unsigned int)*CHAR_BIT - cur_rng->rmax_bits;
  mask = 0;
  for(i=0;i<bdelta;i++) {
   mask = mask<<1;
   mask++;
  }
  if(verbose == D_BITS || verbose == D_ALL){
-   printf("rmax_bits = %d  bdelta = %d\n",rmax_bits,bdelta);
+   printf("rmax_bits = %d  bdelta = %d\n",cur_rng->rmax_bits,bdelta);
  }
 
  for(i=0;i<buflength;i++){
 
    /* put rmax_bits into tmp1 */
-   tmp1 = gsl_rng_get(rng);
+   tmp1 = gsl_rng_get(cur_rng->rng);
    /* Cruft
    printf("tmp1 = %10u = ",tmp1);
    dumpbits(&tmp1,32);
@@ -438,7 +438,7 @@ void fill_uint_buffer(unsigned int *data,unsigned int buflength)
    */
 
    /* put rmax_bits into tmp2 */
-   tmp2 = gsl_rng_get(rng);
+   tmp2 = gsl_rng_get(cur_rng->rng);
    /*
    printf("tmp2 = %10u = ",tmp2);
    printf("mask = %10u = ",mask);
@@ -901,7 +901,7 @@ void get_ntuple_cyclic(unsigned int *input,unsigned int ilen,
 static unsigned int bits_rand[2];   /* A buffer that can handle partial returns */
 static int bleft = -1; /* Number of bits we still need in rand[1] */
 
-unsigned int get_uint_rand(gsl_rng *gsl_rng)
+unsigned int get_uint_rand(random_generator_t *cur_rng)
 {
 
  static unsigned int bl,bu,tmp;
@@ -914,12 +914,12 @@ unsigned int get_uint_rand(gsl_rng *gsl_rng)
    /* e.g. 32 */
    bu = sizeof(unsigned int)*CHAR_BIT;
    /* e.g. 32 - 31 = 1 for a generator that returns 31 bits */
-   bl = bu - rmax_bits;
+   bl = bu - cur_rng->rmax_bits;
    /* For the first call, we start with bits_rand[1] all or partially filled */
    bits_rand[0] = 0;
-   bits_rand[1] = gsl_rng_get(gsl_rng);
+   bits_rand[1] = gsl_rng_get(cur_rng->rng);
    /* This is how many bits we still need. */
-   bleft = bu - rmax_bits;
+   bleft = bu - cur_rng->rmax_bits;
    /*
     * The state of the generator is now what it would be on a
     * typical running call.  bits_rand[1] contains the leftover bits from the
@@ -943,9 +943,9 @@ unsigned int get_uint_rand(gsl_rng *gsl_rng)
   * We have to iterate into range because it is quite possible that
   * rmax_bits won't be enough to fill bits_rand[1].
   */
- while(bleft > rmax_bits){
+ while(bleft > cur_rng->rmax_bits){
    /* Get a bits_rand's worth (rmax_bits) into bits_rand[0] */
-   bits_rand[0] = gsl_rng_get(gsl_rng);
+   bits_rand[0] = gsl_rng_get(cur_rng->rng);
    MYDEBUG(D_BITS) {
      printf("before %2d: |",bleft);
      dumpbits(&bits_rand[0],bu);
@@ -954,7 +954,7 @@ unsigned int get_uint_rand(gsl_rng *gsl_rng)
      printf("|\n");
    }
    /* get the good bits only and fill in bits_rand[1] */
-   bits_rand[1] += b_window(bits_rand[0],bu-rmax_bits,bu-1,bleft-rmax_bits);
+   bits_rand[1] += b_window(bits_rand[0],bu-cur_rng->rmax_bits,bu-1,bleft-cur_rng->rmax_bits);
    MYDEBUG(D_BITS) {
      printf(" after %2d: |",bleft);
      dumpbits(&bits_rand[0],bu);
@@ -962,14 +962,14 @@ unsigned int get_uint_rand(gsl_rng *gsl_rng)
      dumpbits(&bits_rand[1],bu);
      printf("|\n");
    }
-   bleft -= rmax_bits;  /* Number of bits we still need to fill bits_rand[1] */
+   bleft -= cur_rng->rmax_bits;  /* Number of bits we still need to fill bits_rand[1] */
  }
 
  /*
   * We are now in range.  We get just the number of bits we need, from
   * the right of course, and add them to bits_rand[1].
   */
- bits_rand[0] = gsl_rng_get(gsl_rng);
+ bits_rand[0] = gsl_rng_get(cur_rng->rng);
  MYDEBUG(D_BITS) {
    printf("before %2d: |",bleft);
    dumpbits(&bits_rand[0],bu);
@@ -995,11 +995,11 @@ unsigned int get_uint_rand(gsl_rng *gsl_rng)
   * exactly filled the return with ALL the bits in rand[0] then we
   * need to start over on the next one.
   */
- if(bleft == rmax_bits){
+ if(bleft == cur_rng->rmax_bits){
    bleft = bu;
  } else {
-   bits_rand[1] = b_window(bits_rand[0],bu-rmax_bits,bu-bleft-1,bu-rmax_bits+bleft);
-   bleft = bu - rmax_bits + bleft;
+   bits_rand[1] = b_window(bits_rand[0],bu-cur_rng->rmax_bits,bu-bleft-1,bu-cur_rng->rmax_bits+bleft);
+   bleft = bu - cur_rng->rmax_bits + bleft;
    MYDEBUG(D_BITS) {
      printf("  done %2d: |",bleft);
      dumpbits(&bits_rand[0],bu);
@@ -1036,7 +1036,7 @@ static int iclear = -1;
 /* pointer to the last (most significant) returned bit */
 static int bitindex = -1;
 
-void get_rand_bits(void *result,unsigned int rsize,unsigned int nbits,gsl_rng *gsl_rng)
+void get_rand_bits(void *result,unsigned int rsize,unsigned int nbits,random_generator_t *cur_rng)
 {
 
  int i,offset;
@@ -1078,7 +1078,7 @@ void get_rand_bits(void *result,unsigned int rsize,unsigned int nbits,gsl_rng *g
     * a de-facto shuffle for generators with rmax_bits < 32.
     */
    for(i=BRBUF-1;i>=0;i--) {
-     bits_randbuf[i] = get_uint_rand(gsl_rng);
+     bits_randbuf[i] = get_uint_rand(cur_rng);
      /* printf("bits_randbuf[%d] = %u\n",i,bits_randbuf[i]); */
    }
    /*
@@ -1145,7 +1145,7 @@ void get_rand_bits(void *result,unsigned int rsize,unsigned int nbits,gsl_rng *g
   * the current index.
   */
  while(iclear != brindex){
-   bits_randbuf[iclear--] = get_uint_rand(gsl_rng);
+   bits_randbuf[iclear--] = get_uint_rand(cur_rng);
    if(iclear < 0) iclear += BRBUF;  /* wrap on around */
  }
  /*
@@ -1274,7 +1274,7 @@ void mybitadd(char *dst, int doffset, char *src, int soffset, int slen)
 
 /* static unsigned int pattern_output[BRBUF]; */
 
-void get_rand_pattern(void *result,unsigned int rsize,int *pattern,gsl_rng *gsl_rng)
+void get_rand_pattern(void *result,unsigned int rsize,int *pattern,random_generator_t *cur_rng)
 {
 
  int i,j,pindex,poffset;
@@ -1366,7 +1366,7 @@ void get_rand_pattern(void *result,unsigned int rsize,int *pattern,gsl_rng *gsl_
      j = pattern[i];
      while(j>bu) {
 
-       get_rand_bits(&tmpuint,sizeof(unsigned int),bu,rng);
+       get_rand_bits(&tmpuint,sizeof(unsigned int),bu,cur_rng);
        /*
         * Pack this whole uint into result at the offset.
 	*/
@@ -1380,7 +1380,7 @@ void get_rand_pattern(void *result,unsigned int rsize,int *pattern,gsl_rng *gsl_
 
      }
 
-     get_rand_bits(&tmpuint,sizeof(unsigned int),j,rng);
+     get_rand_bits(&tmpuint,sizeof(unsigned int),j,cur_rng);
      /*
       * Pack this partial uint into resultp
       */
@@ -1397,12 +1397,12 @@ void get_rand_pattern(void *result,unsigned int rsize,int *pattern,gsl_rng *gsl_
      j = -pattern[i];
      while(j>bu) {
        /* skip whole uint's worth */
-       get_rand_bits(&tmpuint,sizeof(unsigned int),bu,rng);
+       get_rand_bits(&tmpuint,sizeof(unsigned int),bu,cur_rng);
        j -= bu;
 
      }
      /* skip final remaining <bu chunk */
-     get_rand_bits(&tmpuint,sizeof(unsigned int),j,rng);
+     get_rand_bits(&tmpuint,sizeof(unsigned int),j,cur_rng);
 
    } else {
 

@@ -24,7 +24,7 @@
 
 /* We need to reset the internal state of this function from outside
  * when we go from one rng two another in two sample mode.*/
-inline static uint get_rand_bits_uint (uint nbits, uint mask, gsl_rng *rng, int reset)
+inline static uint get_rand_bits_uint (uint nbits, uint mask, random_generator_t *cur_rng, int reset)
 {
 
  static uint bit_buffer;
@@ -110,8 +110,8 @@ and so on.  Very nice.
   * never does (uintvar << 32) for some uint variable; probably should
   * do the same for (uintvar >> 32) calls below.
   */
- if(nbits == rmax_bits){
-   return gsl_rng_get(rng);
+ if(nbits == cur_rng->rmax_bits){
+   return gsl_rng_get(cur_rng->rng);
  }
   
  MYDEBUG(D_BITS) {
@@ -163,8 +163,8 @@ and so on.  Very nice.
    printf("\n");
  }
  while (1) {
-   bit_buffer = gsl_rng_get (rng);
-   bits_left_in_bit_buffer = rmax_bits;
+   bit_buffer = gsl_rng_get (cur_rng->rng);
+   bits_left_in_bit_buffer = cur_rng->rmax_bits;
 
    MYDEBUG(D_BITS) {
      printf("Refilled bit_buffer\n");
@@ -209,7 +209,7 @@ and so on.  Very nice.
  * But then, so will other programs.
  */
 inline static uint get_bit_ntuple_from_uint (uint bitstr, uint nbits, 
-                                      uint mask, uint boffset)
+                                      uint mask, uint boffset, uint rmax_bits)
 {
    uint result;
    uint len;

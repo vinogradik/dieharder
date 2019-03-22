@@ -31,7 +31,7 @@
 
 #define NOBITS 0
 
-int sts_monobit(Test **test, int irun, gsl_rng *cur_rng)
+int sts_monobit(Test **test, int irun, random_generator_t *cur_rng)
 {
 
  int i;
@@ -61,7 +61,7 @@ int sts_monobit(Test **test, int irun, gsl_rng *cur_rng)
  /*
   * The number of bits per random integer tested.
   */
- blens = rmax_bits;
+ blens = cur_rng->rmax_bits;
  nbits = blens*test[0]->tsamples;
  ptest.y = 0.0;
  ptest.sigma = sqrt((double)nbits);
@@ -79,7 +79,7 @@ int sts_monobit(Test **test, int irun, gsl_rng *cur_rng)
 #if NOBITS
    bitstring = gsl_rng_get(cur_rng);
 #else
-   uint n = gsl_rng_get(cur_rng);
+   uint n = gsl_rng_get(cur_rng->rng);
 #endif
    MYDEBUG(D_STS_MONOBIT) {
 #if NOBITS

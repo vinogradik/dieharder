@@ -36,7 +36,7 @@
 
 #include <dieharder/libdieharder.h>
 
-#define RotL(x,N)    (rmax_mask & (((x) << (N)) | ((x) >> (rmax_bits-(N)))))
+#define RotL(x,N,rmax_mask,rmax_bits)    (rmax_mask & (((x) << (N)) | ((x) >> (rmax_bits-(N)))))
 
 void fDCT2(const unsigned int input[], double output[], size_t len);
 void iDCT2(const double input[], double output[], size_t len);
@@ -76,7 +76,7 @@ double evalMostExtreme(double *pvalue, unsigned int num);
  * largest too often (and about as often as each other).
  */
 
-int dab_dct(Test **test,int irun, gsl_rng *cur_rng)
+int dab_dct(Test **test,int irun, random_generator_t *cur_rng)
 {
  double *dct;
  unsigned int *input;
@@ -84,7 +84,7 @@ int dab_dct(Test **test,int irun, gsl_rng *cur_rng)
  unsigned int i, j;
  unsigned int len = (ntuple == 0) ? 256 : ntuple;
  int rotAmount = 0;
- unsigned int v = 1<<(rmax_bits-1);
+ unsigned int v = 1<<(cur_rng->rmax_bits-1);
  double mean = (double) len * (v - 0.5);
 
  /* positionCounts is only used by the primary test, and not by the
@@ -133,13 +133,13 @@ int dab_dct(Test **test,int irun, gsl_rng *cur_rng)
     * have been used.
     */
    if (j != 0 && (j % (test[0]->tsamples / 4) == 0)) {
-     rotAmount += rmax_bits/4;
+     rotAmount += cur_rng->rmax_bits/4;
    }
 
    /* Read (and rotate) the actual rng words. */
    for (i=0; i<len; i++) {
-     input[i] = gsl_rng_get(cur_rng);
-     input[i] = RotL(input[i], rotAmount);
+     input[i] = gsl_rng_get(cur_rng->rng);
+     input[i] = RotL(input[i], rotAmount, cur_rng->rmax_mask, cur_rng->rmax_bits);
    }
 
    /* Perform the DCT */

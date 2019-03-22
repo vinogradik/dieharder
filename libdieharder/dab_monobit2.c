@@ -23,10 +23,10 @@
 /* The evalMostExtreme function is in dab_dct.c */
 extern double evalMostExtreme(double *pvalue, uint num);
 
-int dab_monobit2(Test **test, int irun, gsl_rng *cur_rng)
+int dab_monobit2(Test **test, int irun, random_generator_t *cur_rng)
 {
  uint i, j;
- uint blens = rmax_bits;
+ uint blens = cur_rng->rmax_bits;
  uint ntup = ntuple;
  double *counts;
  uint *tempCount;
@@ -53,7 +53,7 @@ int dab_monobit2(Test **test, int irun, gsl_rng *cur_rng)
  memset(tempCount, 0, sizeof(*tempCount) * ntup);
 
  for(i=0;i<test[0]->tsamples;i++) {
-   uint n = gsl_rng_get(cur_rng);
+   uint n = gsl_rng_get(cur_rng->rng);
    uint t = 1;
 
    // Begin: count bits

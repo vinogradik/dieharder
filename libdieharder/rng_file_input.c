@@ -25,6 +25,37 @@ static unsigned long int file_input_get (void *vstate);
 static double file_input_get_double (void *vstate);
 static void file_input_set (void *vstate, unsigned long int s);
 
+gsl_rng *file_input_alloc (const gsl_rng_type * T, char *filename)
+{
+
+  gsl_rng *r = (gsl_rng *) malloc (sizeof (gsl_rng));
+
+  if (r == 0)
+    {
+      GSL_ERROR_VAL ("failed to allocate space for rng struct",
+                        GSL_ENOMEM, 0);
+    };
+
+  r->state = calloc (1, T->size);
+
+  if (r->state == 0)
+    {
+      free (r);
+
+      GSL_ERROR_VAL ("failed to allocate space for rng state",
+                        GSL_ENOMEM, 0);
+    };
+
+  r->type = T;
+  file_input_state_t *state = (file_input_state_t *) r->state;
+  state->filename = filename;
+  state->first = 1;
+
+  gsl_rng_set (r, gsl_rng_default_seed);
+
+  return r;
+}
+
 /*
  * This typedef struct file_input_state_t struct contains the data
  * maintained on the operation of the file_input rng, and can be accessed
@@ -83,7 +114,7 @@ static unsigned long int file_input_get (void *vstate)
     * Read in the next random number from the file
     */
    if(fgets(inbuf,K,state->fp) == 0){
-     fprintf(stderr,"# file_input(): Error: EOF on %s\n",filename);
+     fprintf(stderr,"# file_input(): Error: EOF on %s\n",state->filename);
      exit(0);
    }
    /*
@@ -177,7 +208,7 @@ static unsigned long int file_input_get (void *vstate)
    }
    return iret;
  } else {
-   fprintf(stderr,"Error: %s not open.  Exiting.\n", filename);
+   fprintf(stderr,"Error: %s not open.  Exiting.\n", state->filename);
    exit(0);
  }
 
@@ -217,7 +248,7 @@ static void file_input_set (void *vstate, unsigned long int s)
   */
  if(state->fp && s ) {
    if(verbose == D_FILE_INPUT || verbose == D_ALL){
-     fprintf(stdout,"# file_input(): Closing/reopening/resetting %s\n",filename);
+     fprintf(stdout,"# file_input(): Closing/reopening/resetting %s\n",state->filename);
    }
    /* fclose(state->fp); */
    state->fp = NULL;
@@ -225,7 +256,7 @@ static void file_input_set (void *vstate, unsigned long int s)
 
  if (state->fp == NULL){
    if(verbose == D_FILE_INPUT || verbose == D_ALL){
-     fprintf(stdout,"# file_input(): Opening %s\n", filename);
+     fprintf(stdout,"# file_input(): Opening %s\n", state->filename);
    }
 
    /*
@@ -233,8 +264,8 @@ static void file_input_set (void *vstate, unsigned long int s)
     * length.  We can now open it.  The test catches all other conditions
     * that might keep the file from reading, e.g. permissions.
     */
-   if ((state->fp = fopen(filename,"r")) == NULL) {
-     fprintf(stderr,"# file_input(): Error: Cannot open %s, exiting.\n", filename);
+   if ((state->fp = fopen(state->filename,"r")) == NULL) {
+     fprintf(stderr,"# file_input(): Error: Cannot open %s, exiting.\n", state->filename);
      exit(0);
    }
 
@@ -243,7 +274,7 @@ static void file_input_set (void *vstate, unsigned long int s)
     * OK, so if we get here, the file is open.
     */
    if(verbose == D_FILE_INPUT || verbose == D_ALL){
-     fprintf(stdout,"# file_input(): Opened %s for the first time at %p\n", filename,(void*) state->fp);
+     fprintf(stdout,"# file_input(): Opened %s for the first time at %p\n", state->filename,(void*) state->fp);
      fprintf(stdout,"# file_input(): state->fp is %8p\n",(void*) state->fp);
      fprintf(stdout,"# file_input(): Parsing header:\n");
    }
@@ -269,7 +300,7 @@ static void file_input_set (void *vstate, unsigned long int s)
      state->rptr = 0;
      state->rewind_cnt++;
      if(verbose == D_FILE_INPUT || verbose == D_ALL){
-       fprintf(stderr,"# file_input(): Rewinding %s at rtot = %u\n", filename,(uint) state->rtot);
+       fprintf(stderr,"# file_input(): Rewinding %s at rtot = %u\n", state->filename,(uint) state->rtot);
        fprintf(stderr,"# file_input(): Rewind count = %u, resetting rptr = %lu\n",state->rewind_cnt,state->rptr);
      }
    } else {
@@ -285,7 +316,7 @@ static void file_input_set (void *vstate, unsigned long int s)
  while(cnt < 3){
    if(state->fp != NULL) {
      if(fgets(inbuf,K,state->fp) == 0){
-       fprintf(stderr,"# file_input(): Error: EOF on %s\n",filename);
+       fprintf(stderr,"# file_input(): Error: EOF on %s\n",state->filename);
        exit(0);
      }
    }

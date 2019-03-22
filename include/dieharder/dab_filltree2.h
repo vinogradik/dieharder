@@ -5,7 +5,7 @@
 /*
  * function prototype
  */
-int dab_filltree2(Test **test, int irun, gsl_rng *cur_rng);
+int dab_filltree2(Test **test, int irun, random_generator_t *cur_rng);
 
 static Dtest dab_filltree2_dtest __attribute__((unused)) = {
   "DAB Fill Tree 2 Test",

@@ -18,17 +18,17 @@
 
 #include "dieharder.h"
 
-void list_rand()
+void list_rand(random_generator_t *cur_rng)
 {
 
  int i;
  
  printf("#==================================================================\n");
- printf("# generator type: %s\n", gsl_rng_name(rng));
- printf("# seed value: %u, max value = %u  count = %d\n",seed, random_max,tsamples);
+ printf("# generator type: %s\n", gsl_rng_name(cur_rng->rng));
+ printf("# seed value: %u, max value = %u  count = %d\n",cur_rng->params.gseeds[0], cur_rng->random_max, tsamples);
  printf("# Count\t int rand\tuniform rand\n");
  printf("# ==================================================================\n");
- for(i = 1;i<=tsamples;i++) printf("%d\t%u\t %10.8f\n",i,gsl_rng_get(rng),gsl_rng_uniform(rng));
+ for(i = 1;i<=tsamples;i++) printf("%d\t%u\t %10.8f\n",i,gsl_rng_get(cur_rng->rng),gsl_rng_uniform(cur_rng->rng));
 
 }
 

@@ -18,7 +18,7 @@
 
 #include <dieharder/libdieharder.h>
 
-int sts_runs(Test **test, int irun, gsl_rng *cur_rng)
+int sts_runs(Test **test, int irun, random_generator_t *cur_rng)
 {
 
  int b,t;
@@ -40,7 +40,7 @@ int sts_runs(Test **test, int irun, gsl_rng *cur_rng)
  /*
   * Number of total bits from -t test[0]->tsamples = size of rand_int[]
   */
- bits = rmax_bits*test[0]->tsamples;
+ bits = cur_rng->rmax_bits*test[0]->tsamples;
 
  /*
   * We have to initialize these a bit differently this time
@@ -51,7 +51,7 @@ int sts_runs(Test **test, int irun, gsl_rng *cur_rng)
   * Create entire bitstring to be tested
   */
  for(t=0;t<test[0]->tsamples;t++){
-   rand_int[t] = gsl_rng_get(cur_rng);
+   rand_int[t] = gsl_rng_get(cur_rng->rng);
  }
 
  /*
@@ -68,7 +68,7 @@ int sts_runs(Test **test, int irun, gsl_rng *cur_rng)
     * This gets the integer value of the ntuple at index position
     * n in the current bitstring, from a window with cyclic wraparound.
     */
-   value = get_bit_ntuple(rand_int,test[0]->tsamples,2,b);
+   value = get_bit_ntuple(rand_int,test[0]->tsamples,2,b, cur_rng);
    switch(value){
      case 0:   /* 00 no new ones */
        c00++;
@@ -94,11 +94,11 @@ int sts_runs(Test **test, int irun, gsl_rng *cur_rng)
  /*
   * form the probability of getting a one in the entire sample
   */
- pones /= (double) test[0]->tsamples*rmax_bits;
- c00 /= (double) test[0]->tsamples*rmax_bits;
- c01 /= (double) test[0]->tsamples*rmax_bits;
- c10 /= (double) test[0]->tsamples*rmax_bits;
- c11 /= (double) test[0]->tsamples*rmax_bits;
+ pones /= (double) test[0]->tsamples*cur_rng->rmax_bits;
+ c00 /= (double) test[0]->tsamples*cur_rng->rmax_bits;
+ c01 /= (double) test[0]->tsamples*cur_rng->rmax_bits;
+ c10 /= (double) test[0]->tsamples*cur_rng->rmax_bits;
+ c11 /= (double) test[0]->tsamples*cur_rng->rmax_bits;
 
  /*
   * Now we can finally compute the targets for the problem.

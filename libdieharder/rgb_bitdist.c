@@ -60,7 +60,7 @@
 
 #include "static_get_bits.c"
 
-int rgb_bitdist(Test **test,int irun, gsl_rng *cur_rng)
+int rgb_bitdist(Test **test,int irun, random_generator_t *cur_rng)
 {
 
  uint nb;          /* number of bits in a tested ntuple */
@@ -283,7 +283,7 @@ int rgb_bitdist(Test **test,int irun, gsl_rng *cur_rng)
    printf("# rgb_bitdist():            vtest table\n");
    printf("# rgb_bitdist(): Outcome   bit          x           y       sigma\n");
  }
- ri = gsl_rng_uniform_int(cur_rng,value_max);
+ ri = gsl_rng_uniform_int(cur_rng->rng,value_max);
  for(i=0;i<value_max;i++){
    for(b=0;b<=bsamples;b++){
      MYDEBUG(D_RGB_BITDIST){

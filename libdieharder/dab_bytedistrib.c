@@ -30,7 +30,7 @@
 #define SAMP_TOTAL (3*SAMP_PER_WORD)
 #define TABLE_SIZE (256 * SAMP_TOTAL)
 
-int dab_bytedistrib(Test **test,int irun, gsl_rng *cur_rng) {
+int dab_bytedistrib(Test **test,int irun, random_generator_t *cur_rng) {
  Vtest vtest;
  unsigned int t,i,j;
  unsigned int counts[TABLE_SIZE];
@@ -46,7 +46,7 @@ int dab_bytedistrib(Test **test,int irun, gsl_rng *cur_rng) {
      /*
       * Generate a word; this word will be used for SAMP_PER_WORD bytes.
       */
-     unsigned int word = gsl_rng_get(cur_rng);
+     unsigned int word = gsl_rng_get(cur_rng->rng);
      unsigned char currentShift = 0;
      for (j = 0; j < SAMP_PER_WORD; j++) {
 
@@ -60,7 +60,7 @@ int dab_bytedistrib(Test **test,int irun, gsl_rng *cur_rng) {
         * shift amounts correctly (at least I think it does; confirmed for
         * SAMP_PER_WORD==3 and a variety of rmax_bits values).
         */
-       unsigned char shiftAmount = ((j+1) * (rmax_bits - 8)) / (SAMP_PER_WORD - 1);
+       unsigned char shiftAmount = ((j+1) * (cur_rng->rmax_bits - 8)) / (SAMP_PER_WORD - 1);
        unsigned int v = word & 0x0ff;    /* v is the byte sampled from the word */
        word >>= shiftAmount - currentShift;
        currentShift += shiftAmount;

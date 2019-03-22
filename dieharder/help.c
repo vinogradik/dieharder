@@ -52,12 +52,12 @@ Usage:\n\
 \n\
 dieharder [-a] [-d dieharder test number] [-f filename] [-B]\n\
           [-D output flag [-D output flag] ... ] [-F] [-c separator]\n\
+          [-e etalon generator number] [-E etalon generator seed]\n\
+          [-i etalon random input filename]\n\
           [-g generator number or -1] [-h] [-k ks_flag] [-l] \n\
           [-L overlap] [-m multiply_p] [-n ntuple] \n\
-          [-p number of p samples] [-P Xoff]\n\
-          [-o filename] [-s seed strategy] [-S random number seed]\n\
-          [-n ntuple] [-p number of p samples] [-o filename]\n\
-          [-s seed strategy] [-S random number seed]\n\
+          [-o filename] [-p number of p samples] [-P Xoff]\n\
+          [-q] [-s seed strategy] [-S random number seed]\n\
           [-t number of test samples] [-v verbose flag]\n\
           [-W weak] [-X fail] [-Y Xtrategy]\n\
           [-x xvalue] [-y yvalue] [-z zvalue]\n");
@@ -82,6 +82,11 @@ fprintf(stdout, "\n\
      aggregated.  To see all currently known flags use the -F command.\n\
   -F - lists all known flags by name and number.\n\
   -c table separator - where separator is e.g. ',' (CSV) or ' ' (whitespace).\n\
+  (-e) generator number - selects a specific generator as etalon. If etalon\n\
+     generator is specified, two-sampled tests will be used.\n\
+  (-E) Eseed - where seed is a uint.  Overrides the default random seed\n\
+     selection for etalon generator.  Ignored for file or stdin input.\n\
+  (-i) filename input for etalon random generator.\n\
   -g generator number - selects a specific generator for testing.  Using\n\
      -1 causes all known generators to be printed out to the display.\n\
   -h prints context-sensitive help -- usually Usage (this message) or a\n\
@@ -117,8 +122,10 @@ fprintf(stdout, "\n\
      AES-derived T2D test failure thresholds for fully automated reliable \n\
      operation, but for now it is more a 'boredom' threshold set by how long \n\
      one might reasonably want to wait on any given test run. \n\
+  (-q) (for two sample test) compare generator for testing and it's \n\
+     XOR with etalon generator\n\
   -S seed - where seed is a uint.  Overrides the default random seed\n\
-     selection.  Ignored for file or stdin input.\n\
+     selection for tested generator.  Ignored for file or stdin input.\n\
   -s strategy - if strategy is the (default) 0, dieharder reseeds (or\n\
      rewinds) once at the beginning when the random number generator is\n\
      selected and then never again.  If strategy is nonzero, the generator\n\

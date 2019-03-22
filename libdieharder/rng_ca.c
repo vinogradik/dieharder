@@ -38,7 +38,7 @@
 
 static unsigned long int ca_get (void *vstate);
 static double ca_get_double (void *vstate);
-static void ca_set (void *vstate, unsigned long int s);
+static void ca_set (void *vstate, unsigned long int seed);
 
 typedef struct
   {
@@ -120,7 +120,7 @@ ca_get_double (void *vstate)
 }
 
 static void
-ca_set (void *vstate, unsigned long int s) {
+ca_set (void *vstate, unsigned long int seed) {
 
  /* Initialize automaton using specified seed. */
  ca_state_t *state __attribute__((unused)) = (ca_state_t *) vstate;

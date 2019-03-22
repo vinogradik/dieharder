@@ -51,7 +51,7 @@ static double sdata[]={
 0.00001803, 0.00000982, 0.00001121
 };
 
-int diehard_squeeze(Test **test, int irun, gsl_rng *cur_rng)
+int diehard_squeeze(Test **test, int irun, random_generator_t *cur_rng)
 {
 
  int i,j,k;
@@ -102,7 +102,7 @@ int diehard_squeeze(Test **test, int irun, gsl_rng *cur_rng)
 
    /* printf("%d:   %d\n",j,k); */
    while((k != 1) && (j < 48)){
-     k = ceil(k*gsl_rng_uniform(cur_rng));
+     k = ceil(k*gsl_rng_uniform(cur_rng->rng));
      j++;
      /* printf("%d:   %d\n",j,k); */
    }

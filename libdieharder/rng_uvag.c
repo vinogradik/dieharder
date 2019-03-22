@@ -125,7 +125,7 @@ static void uvag_set (void *vstate, unsigned long int s) {
  
  uint i, array_len = 255 + WORD, tot, seed_seed, tmp8;
  unsigned char key[256], *kp, temp;
- gsl_rng *seed_rng;    /* random number generator used to seed uvag */
+ random_generator_t seed_rng;    /* random number generator used to seed uvag */
 
  /*
   * Preload the array with 1-byte integers
@@ -143,22 +143,22 @@ static void uvag_set (void *vstate, unsigned long int s) {
   * mt19937_1999 generator, basically one of the best in the world -- not
   * that it matters.
   */
- seed_rng = gsl_rng_alloc(dh_rng_types[14]);
+ seed_rng.rng = gsl_rng_alloc(dh_rng_types[14]);
  seed_seed = s;
- gsl_rng_set(seed_rng,seed_seed);
- random_max = gsl_rng_max(seed_rng);
- rmax = random_max;
- rmax_bits = 0;
- rmax_mask = 0;
- while(rmax){
-   rmax >>= 1;
-   rmax_mask = rmax_mask << 1;
-   rmax_mask++;
-   rmax_bits++;
+ gsl_rng_set(seed_rng.rng,seed_seed);
+ seed_rng.random_max = gsl_rng_max(seed_rng.rng);
+ seed_rng.rmax = seed_rng.random_max;
+ seed_rng.rmax_bits = 0;
+ seed_rng.rmax_mask = 0;
+ while(seed_rng.rmax){
+   seed_rng.rmax >>= 1;
+   seed_rng.rmax_mask = seed_rng.rmax_mask << 1;
+   seed_rng.rmax_mask++;
+   seed_rng.rmax_bits++;
  }
  for(i=0;i<256;i++){
    /* if(i%32 == 0) printf("\n"); */
-   get_rand_bits(&tmp8,sizeof(uint),8,seed_rng);
+   get_rand_bits(&tmp8,sizeof(uint),8,&seed_rng);
    if(i!=255){
      key[i] = tmp8;
    } else {

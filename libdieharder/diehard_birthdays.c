@@ -47,7 +47,7 @@ static double lambda;
 static unsigned int *intervals;
 static unsigned int nms,nbits,kmax;
 
-int diehard_birthdays(Test **test, int irun, gsl_rng *cur_rng)
+int diehard_birthdays(Test **test, int irun, random_generator_t *cur_rng)
 {
 
  uint i,k,t,m,mnext;
@@ -71,7 +71,7 @@ int diehard_birthdays(Test **test, int irun, gsl_rng *cur_rng)
  nms = NMS;
  /* Cruft nbits = diehard_birthdays_nbits; */
  nbits = NBITS;
- if(nbits>rmax_bits) nbits = rmax_bits;
+ if(nbits>cur_rng->rmax_bits) nbits = cur_rng->rmax_bits;
 
  /*
   * This is the one thing that matters.  We're going to make the

@@ -27,7 +27,50 @@ typedef struct {
    */
   gsl_rng *grngs[GVECMAX];
   unsigned int XOR_rnd;
+  input_params_t *params;
 } XOR_state_t;
+
+gsl_rng *XOR_rng_alloc (const gsl_rng_type * T, input_params_t *params)
+{
+
+  gsl_rng *r = (gsl_rng *) malloc (sizeof (gsl_rng));
+
+  if (r == 0)
+    {
+      GSL_ERROR_VAL ("failed to allocate space for rng struct",
+                        GSL_ENOMEM, 0);
+    };
+
+  r->state = calloc (1, T->size);
+
+  if (r->state == 0)
+    {
+      free (r);
+
+      GSL_ERROR_VAL ("failed to allocate space for rng state",
+                        GSL_ENOMEM, 0);
+    };
+  XOR_state_t *state = (XOR_state_t *) r->state;
+  state->params = params;
+
+  r->type = T;
+
+  gsl_rng_set (r, gsl_rng_default_seed);
+
+  return r;
+}
+gsl_rng *file_input_alloc (const gsl_rng_type * T, char *filename);
+gsl_rng *wrap_gsl_rng_alloc(input_params_t *params, unsigned int i) {
+  unsigned int curr_gnum = params->gnumbs[i];
+  const gsl_rng_type *T = dh_rng_types[curr_gnum];
+  if (curr_gnum == 207) {
+    return XOR_rng_alloc(T, params);
+  }
+  if(strncmp("file_input",T->name,10) == 0){
+    return file_input_alloc(T, params->filenames[params->gfilenum[(i > 0)? (i - 1) : 0]]);
+  }
+  return gsl_rng_alloc(T);
+}
 
 static inline unsigned long int
 XOR_get (void *vstate)
@@ -39,9 +82,13 @@ XOR_get (void *vstate)
   * There is always this one, or we are in deep trouble.  I am going
   * to have to decorate this code with error checks...
   */
- state->XOR_rnd = gsl_rng_get(state->grngs[1]);
- for(i=1;i<gvcount;i++){
+ state->XOR_rnd = gsl_rng_get(state->grngs[0]);
+ for(i=1;i<state->params->gvcount - 1;i++){
    state->XOR_rnd ^= gsl_rng_get(state->grngs[i]);
+ }
+ /* xor etalon with tested generator if etalon_xor enabled*/
+ if (state->params->is_etalon && etalon_xor) {
+   state->XOR_rnd ^= gsl_rng_get(generator.rng);
  }
  return state->XOR_rnd;
  
@@ -57,25 +104,23 @@ static void XOR_set (void *vstate, unsigned long int s) {
 
  XOR_state_t *state = (XOR_state_t *) vstate;
  int i;
- uint seed_seed;
+ input_params_t *params = state->params;
 
  /*
   * OK, here's how it works.  grngs[0] is set to mt19937_1999, seeded
   * as per usual, and used (ONLY) to see the remaining generators.
   * The remaining generators.
   */
- state->grngs[0] = gsl_rng_alloc(dh_rng_types[14]);
- seed_seed = s;
- gsl_rng_set(state->grngs[0],seed_seed);
- for(i=1;i<gvcount;i++){
-
+ for(i=0;i<state->params->gvcount - 1;i++){
    /*
     * I may need to (and probably should) add a sanity check
     * here or in choose_rng() to be sure that all of the rngs
     * exist.
     */
-   state->grngs[i] = gsl_rng_alloc(dh_rng_types[gnumbs[i]]);
-   gsl_rng_set(state->grngs[i],gsl_rng_get(state->grngs[0]));
+   if (state->grngs[i] == NULL) {
+     state->grngs[i] = wrap_gsl_rng_alloc (params, i + 1);
+   }
+   gsl_rng_set(state->grngs[i],params->gseeds[i]);
 
  }
 

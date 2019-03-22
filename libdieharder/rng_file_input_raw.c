@@ -78,7 +78,7 @@ static unsigned long int file_input_raw_get(void *vstate)
    }
    return(iret);
  } else {
-   fprintf(stderr,"Error: %s not open.  Exiting.\n", filename);
+   fprintf(stderr,"Error: %s not open.  Exiting.\n", state->filename);
    exit(0);
  }
 
@@ -101,7 +101,6 @@ static double file_input_raw_get_double (void *vstate)
 static void file_input_raw_set (void *vstate, unsigned long int s)
 {
 
- static uint first=1;
  struct stat sbuf;
 
  file_input_state_t *state = (file_input_state_t *) vstate;
@@ -115,7 +114,7 @@ static void file_input_raw_set (void *vstate, unsigned long int s)
   * Get and set the file length, check to make sure the file exists,
   * whatever...
   */
- if(first){
+ if(state->first){
    if(verbose){
      fprintf(stdout,"# file_input_raw(): entering file_input_raw_set 1st call.\n");
    }
@@ -128,9 +127,9 @@ static void file_input_raw_set (void *vstate, unsigned long int s)
     */
    state->fp = NULL;
 
-   if(stat(filename, &sbuf)){
+   if(stat(state->filename, &sbuf)){
      if(errno == EBADF){
-       fprintf(stderr,"# file_input_raw(): Error -- file descriptor %s bad.\n",filename);
+       fprintf(stderr,"# file_input_raw(): Error -- file descriptor %s bad.\n",state->filename);
        exit(0);
      }
    }
@@ -149,11 +148,11 @@ static void file_input_raw_set (void *vstate, unsigned long int s)
      state->flen = sbuf.st_size/sizeof(uint);
      filecount = state->flen;
      if (filecount < 16) {
-       fprintf(stderr,"# file_input_raw(): Error -- file %s is too small.\n",filename);
+       fprintf(stderr,"# file_input_raw(): Error -- file %s is too small.\n",state->filename);
        exit(0);
      }
    } else if (S_ISDIR(sbuf.st_mode)){
-     fprintf(stderr,"# file_input_raw(): Error -- path %s is a directory.\n",filename);
+     fprintf(stderr,"# file_input_raw(): Error -- path %s is a directory.\n",state->filename);
      exit(0);
    } else {
       /*
@@ -166,7 +165,7 @@ static void file_input_raw_set (void *vstate, unsigned long int s)
    /*
     * This segment is executed only one time when the file is FIRST opened.
     */
-   first = 0;
+   state->first = 0;
  }
 
  /*
@@ -177,7 +176,7 @@ static void file_input_raw_set (void *vstate, unsigned long int s)
   */
  if(state->fp && s ) {
    if(verbose == D_FILE_INPUT || verbose == D_ALL){
-     fprintf(stdout,"# file_input(): Closing/reopening/resetting %s\n",filename);
+     fprintf(stdout,"# file_input(): Closing/reopening/resetting %s\n",state->filename);
    }
    fclose(state->fp);
    state->fp = NULL;
@@ -185,7 +184,7 @@ static void file_input_raw_set (void *vstate, unsigned long int s)
 
  if (state->fp == NULL){
    if(verbose == D_FILE_INPUT_RAW || verbose == D_ALL){
-     fprintf(stdout,"# file_input_raw(): Opening %s\n", filename);
+     fprintf(stdout,"# file_input_raw(): Opening %s\n", state->filename);
    }
 
    /*
@@ -193,8 +192,8 @@ static void file_input_raw_set (void *vstate, unsigned long int s)
     * length.  We can now open it.  The test catches all other conditions
     * that might keep the file from reading, e.g. permissions.
     */
-   if ((state->fp = fopen(filename,"r")) == NULL) {
-     fprintf(stderr,"# file_input_raw(): Error: Cannot open %s, exiting.\n", filename);
+   if ((state->fp = fopen(state->filename,"r")) == NULL) {
+     fprintf(stderr,"# file_input_raw(): Error: Cannot open %s, exiting.\n", state->filename);
      exit(0);
    }
 
@@ -202,7 +201,7 @@ static void file_input_raw_set (void *vstate, unsigned long int s)
     * OK, so if we get here, the file is open.
     */
    if(verbose == D_FILE_INPUT_RAW || verbose == D_ALL){
-     fprintf(stdout,"# file_input_raw(): Opened %s for the first time.\n", filename);
+     fprintf(stdout,"# file_input_raw(): Opened %s for the first time.\n", state->filename);
      fprintf(stdout,"# file_input_raw(): state->fp is %8p, file contains %u unsigned integers.\n",(void*) state->fp,(uint)state->flen);
    }
    state->rptr = 0;  /* No rands read yet */
@@ -227,7 +226,7 @@ static void file_input_raw_set (void *vstate, unsigned long int s)
      state->rptr = 0;
      state->rewind_cnt++;
      if(verbose == D_FILE_INPUT_RAW || verbose == D_ALL){
-       fprintf(stderr,"# file_input_raw(): Rewinding %s at rtot = %u\n", filename,(uint) state->rtot);
+       fprintf(stderr,"# file_input_raw(): Rewinding %s at rtot = %u\n", state->filename,(uint) state->rtot);
        fprintf(stderr,"# file_input_raw(): Rewind count = %u, resetting rptr = %u\n",state->rewind_cnt,(uint) state->rptr);
      }
    } else {

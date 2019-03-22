@@ -44,12 +44,12 @@
 double fpipi(int pi1,int pi2,int nkp);
 uint piperm(size_t *data,int len);
 void make_cexact();
-void make_cexpt();
+void make_cexpt(gsl_rng *rng);
 int nperms,noperms;
 double **cexact,**ceinv,**cexpt,**idty;
 double *cvexact,*cvein,*cvexpt,*vidty;
 
-int rgb_operm(Test **test,int irun)
+int rgb_operm(Test **test,int irun, random_generator_t *cur_rng)
 {
 
  int i,j,n,nb,iv,s;
@@ -123,7 +123,7 @@ int rgb_operm(Test **test,int irun)
  }
 
  make_cexact();
- make_cexpt();
+ make_cexpt(cur_rng->rng);
 
  iv=0;
  for(i=0;i<nperms;i++){
@@ -397,7 +397,7 @@ void make_cexact()
 
 }
 
-void make_cexpt()
+void make_cexpt(gsl_rng *rng)
 {
 
  int i,j,k,ip,t;

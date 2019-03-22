@@ -5,7 +5,7 @@
 /*
  * function prototype
  */
-int dab_dct(Test **test, int irun, gsl_rng *cur_rng);
+int dab_dct(Test **test, int irun, random_generator_t *cur_rng);
 
 static Dtest dab_dct_dtest __attribute__((unused)) = {
   "DAB DCT",

@@ -34,7 +34,7 @@
 
 #include <dieharder/libdieharder.h>
 
-int diehard_oqso(Test **test, int irun, gsl_rng *cur_rng)
+int diehard_oqso(Test **test, int irun, random_generator_t *cur_rng)
 {
 
  uint i,j,k,l,i0=0,j0=0,k0=0,l0=0,t,boffset=0;
@@ -83,10 +83,10 @@ int diehard_oqso(Test **test, int irun, gsl_rng *cur_rng)
   */
  for(t=0;t<test[0]->tsamples;t++){
    if(t%6 == 0) {
-     i0 = gsl_rng_get(cur_rng);
-     j0 = gsl_rng_get(cur_rng);
-     k0 = gsl_rng_get(cur_rng);
-     l0 = gsl_rng_get(cur_rng);
+     i0 = gsl_rng_get(cur_rng->rng);
+     j0 = gsl_rng_get(cur_rng->rng);
+     k0 = gsl_rng_get(cur_rng->rng);
+     l0 = gsl_rng_get(cur_rng->rng);
      boffset = 0;
    }
    /*

@@ -5,7 +5,7 @@
 /*
  * function prototype
  */
-int diehard_oqso(Test **test, int irun, gsl_rng *cur_rng);
+int diehard_oqso(Test **test, int irun, random_generator_t *cur_rng);
 
 static Dtest diehard_oqso_dtest __attribute__((unused)) = {
   "Diehard OQSO Test",

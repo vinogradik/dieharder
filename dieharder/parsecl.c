@@ -24,6 +24,26 @@
 char table_entry[TLENGTH];
 int show_flags = 0;
 
+void add_gnumb (input_params_t *params, unsigned int gnumb) {
+  params->gnumbs[params->gvcount] = gnumb;
+  params->gvcount++;
+}
+
+void add_gname (input_params_t *params, char* gname) {
+  strncpy(params->gnames[params->gvcount],gname,128);
+  params->gvcount++;
+}
+
+void add_gseed(input_params_t *params, unsigned int gseed) {
+  params->gseeds[params->gscount] = gseed;
+  params->gscount++;
+}
+
+void add_filename(input_params_t *params, char* filename) {
+  strncpy(params->filenames[params->fcount],filename,K);
+  params->fcount++;
+}
+
 void parsecl(int argc, char **argv)
 {
 
@@ -42,6 +62,8 @@ void parsecl(int argc, char **argv)
  extern char *optarg;
  extern int optind, opterr, optopt;
  char *endptr;
+ input_params_t *rng_params = &generator.params;
+ input_params_t *erng_params = &etalon_generator.params;
 
  /*
   * If dieharder is executed by itself on a command line, print out help
@@ -53,7 +75,7 @@ void parsecl(int argc, char **argv)
     exit(1); /* count this as an error */
  }
 
- while ((c = getopt(argc,argv,"aBc:D:d:Ff:g:hi:k:lL:m:n:oO:p:P:S:s:t:Vv:W:X:x:Y:y:Z:z:")) != EOF){
+ while ((c = getopt(argc,argv,"aBc:D:d:e:E:Ff:g:hI:i:k:lL:m:n:o:O:p:P:qS:s:t:Vv:W:X:x:Y:y:Z:z:")) != EOF){
    switch (c){
      case 'a':
        all = YES;
@@ -131,11 +153,22 @@ void parsecl(int argc, char **argv)
          dtest_num = dtest_tmp;
        }
        break;
+     case 'e': /* etalon random generator input */
+       gen_tmp =  strtol(optarg,&endptr,10);
+       if(strncmp(optarg,endptr,1) == 0){
+         add_gname(erng_params,optarg);
+       } else {
+         add_gnumb(erng_params, gen_tmp);
+       }
+       break;
+     case 'E': /* Seed input for etalon generator */
+       add_gseed(erng_params, strtol(optarg,(char **) NULL,10));
+       break;
      case 'F':
        show_flags = 1;
        break;
      case 'f':
-       strncpy(filename,optarg,128);
+       add_filename(rng_params, optarg);
        fromfile = 1;
        break;
      /*
@@ -152,25 +185,22 @@ void parsecl(int argc, char **argv)
        gen_tmp =  strtol(optarg,&endptr,10);
        /* printf("optarg = %s, dtest_tmp = %d endptr = %s\n",optarg,dtest_tmp,endptr); */
        if(strncmp(optarg,endptr,1) == 0){
-         strncpy(gnames[gvcount],optarg,128);
+         add_gname(rng_params,optarg);
        } else {
-         gnumbs[gvcount] = gen_tmp;
+         add_gnumb(rng_params, gen_tmp);
        }
-       gvcount++;
        break;
      case 'h':
        help_flag = YES;
        break;
-     case 'i':
+     case 'I':
        iterations = strtol(optarg,(char **) NULL,10);
+       break;
+     case 'i': /* filename input for etalon random generator */
+       add_filename(erng_params, optarg);
        break;
      case 'k':
        ks_test = strtol(optarg,(char **) NULL,10);
-       if(ks_test == 4)
-           /* Now reference rng is the data from the file, so
-            * filename is required for correct work.
-            */
-    	   fromfile = 1;
        break;
      case 'l':
        list = YES;
@@ -189,6 +219,7 @@ void parsecl(int argc, char **argv)
        ntuple = strtol(optarg,(char **) NULL,10);
        break;
      case 'o':
+       strncpy(output_filename,optarg,128);
        output_file = 1;
        break;
      case 'O':
@@ -205,9 +236,10 @@ void parsecl(int argc, char **argv)
        psamples = strtol(optarg,(char **) NULL,10);
        break;
      case 'S':
-       Seed = strtol(optarg,(char **) NULL,10);
-       gseeds[gscount] = gen_tmp;
-       gscount++;
+       add_gseed(rng_params, strtol(optarg,(char **) NULL,10));
+       break;
+     case 'q': /* enable XOR with etalon generator*/
+       etalon_xor = YES;
        break;
      case 's':
        strategy = strtol(optarg,(char **) NULL,10);
@@ -299,7 +331,7 @@ void parsecl(int argc, char **argv)
     * I could probably do this several ways, but this one is quite
     * simple and works fine.
     */
-   if(generator == -1){
+   if(rng_params->gnumbs[0] >= MAXRNGS){
      list_rngs();
      Exit(0);
    }
@@ -338,6 +370,29 @@ void parsecl(int argc, char **argv)
      tflag = tflag_default;
    }
 
+   if (rng_params->gvcount == 0) {
+     /* use default random generator if no generator specified */
+     rng_params->gvcount++;
+   }
+
+   if (erng_params->gvcount == 0) {
+     /* disable etalon XOR if no etalon generators specified */
+     etalon_xor = NO;
+   }
+
+   /*we should add 207 to etalon set of rngs and then all other rngs
+    *if etalon_xor is enabled
+    */
+   if (etalon_xor) {
+     if (erng_params->gnumbs[0] != 207) {
+       erng_params->gvcount = 1;
+       for (i = 0; i < erng_params->gvcount; i++) {
+         erng_params->gnumbs[i + 1] = erng_params->gnumbs[i];
+       }
+       erng_params->gnumbs[0] = 207;
+       erng_params->gvcount++;
+     }
+   }
    /*
     * If we get here, it is time to move on and execute dieharder
     */

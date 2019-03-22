@@ -37,7 +37,7 @@
 
 #include <dieharder/libdieharder.h>
 
-int rgb_lagged_sums(Test **test,int irun, gsl_rng *cur_rng)
+int rgb_lagged_sums(Test **test,int irun, random_generator_t *cur_rng)
 {
 
  uint t,i,lag;
@@ -71,10 +71,10 @@ int rgb_lagged_sums(Test **test,int irun, gsl_rng *cur_rng)
     */
 
    /* Throw away lag per sample */
-   for(i=0;i<lag;i++) gsl_rng_uniform(cur_rng);
+   for(i=0;i<lag;i++) gsl_rng_uniform(cur_rng->rng);
 
    /* sample only every lag numbers, reset counter */
-   ptest.x += gsl_rng_uniform(cur_rng);
+   ptest.x += gsl_rng_uniform(cur_rng->rng);
 
  }
 

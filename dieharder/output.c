@@ -11,12 +11,12 @@
 #endif
 
 void rdh_get_pvalues(Dtest *dtest,Test **test);
-void output_rng_info();
+void output_rng_info(random_generator_t *cur_rng);
 void output_table_line_header();
-void output_table_line(Dtest *dtest,Test **test);
+void output_table_line(Dtest *dtest,Test **test, unsigned long int seed);
 int output_histogram(double *input,char *pvlabel,int inum,double min,double max,int nbins,char *label);
 
-void output(Dtest *dtest,Test **test)
+void output(Dtest *dtest,Test **test, random_generator_t *cur_rng)
 {
 
 /*
@@ -58,7 +58,7 @@ void output(Dtest *dtest,Test **test)
     * on the first call.
     */
    if(tflag & TSHOW_RNG){
-     output_rng_info();
+     output_rng_info(cur_rng);
    }
 
    /*
@@ -80,7 +80,7 @@ void output(Dtest *dtest,Test **test)
   * possibly with additional conditionals rejecting test results involving
   * rewinds, period.
   */
- if(strncmp("file_input",gsl_rng_name(rng),10) == 0){
+ if(strncmp("file_input",gsl_rng_name(cur_rng->rng),10) == 0){
    /*
     * This needs its own output flag and field.  I'm losing it for now.
    if(!quiet){
@@ -88,8 +88,8 @@ void output(Dtest *dtest,Test **test)
      fflush(stdout);
    }
     */
-   if(file_input_get_rewind_cnt(rng) != 0){
-     fprintf(stderr,"# The file %s was rewound %u times\n",gsl_rng_name(rng),file_input_get_rewind_cnt(rng));
+   if(file_input_get_rewind_cnt(cur_rng->rng) != 0){
+     fprintf(stderr,"# The file %s was rewound %u times\n",gsl_rng_name(cur_rng->rng),file_input_get_rewind_cnt(cur_rng->rng));
      fflush(stderr);
    }
  }
@@ -99,7 +99,8 @@ void output(Dtest *dtest,Test **test)
   * although I suppose it can be empty if no non-header output flags are
   * turned on.
   */
- output_table_line(dtest,test);
+ //think about other seeds
+ output_table_line(dtest,test,cur_rng->params.gseeds[0]);
 
 #endif
 
@@ -139,7 +140,7 @@ void rdh_get_pvalues(Dtest *dtest,Test **test)
  * This is just dieharder version/copyright information, #-delimited,
  * controlled by the THEADER bit in tflag.
  */
-void output_rng_info()
+void output_rng_info(random_generator_t *cur_rng)
 {
 
  if(tflag & TLINE_HEADER){
@@ -178,22 +179,23 @@ void output_rng_info()
    fprintf(stdout,"1%c",table_separator);
  }
  if(tflag & TNO_WHITE){
-   fprintf(stdout,"%s%c",gsl_rng_name(rng),table_separator);
+   fprintf(stdout,"%s%c",gsl_rng_name(cur_rng->rng),table_separator);
  } else {
-   fprintf(stdout,"%15s%c",gsl_rng_name(rng),table_separator);
+   fprintf(stdout,"%15s%c",gsl_rng_name(cur_rng->rng),table_separator);
  }
  if(tflag & TNUM){
    if(tflag & TNO_WHITE){
-     fprintf(stdout,"%d%c",generator,table_separator);
+     fprintf(stdout,"%d%c",cur_rng->params.gnumbs[0],table_separator);
    } else {
-     fprintf(stdout,"%3d%c",generator,table_separator);
+     fprintf(stdout,"%3d%c",cur_rng->params.gnumbs[0],table_separator);
    }
  }
+ //write multiple filenames?
  if(fromfile){
    if(tflag & TNO_WHITE){
-     fprintf(stdout,"%s%c",filename,table_separator);
+     fprintf(stdout,"%s%c",cur_rng->params.filenames[0],table_separator);
    } else {
-     fprintf(stdout,"%32s%c",filename,table_separator);
+     fprintf(stdout,"%32s%c",cur_rng->params.filenames[0],table_separator);
    }
  }
  if(tflag & TRATE){
@@ -205,9 +207,10 @@ void output_rng_info()
  }
  if(tflag & TSEED && strategy == 0 && !fromfile){
    if(tflag & TNO_WHITE){
-     fprintf(stdout,"%lu%c",seed,table_separator);
+     //write all seeds??
+     fprintf(stdout,"%lu%c",cur_rng->params.gseeds[0],table_separator);
    } else {
-     fprintf(stdout,"%10lu%c",seed,table_separator);
+     fprintf(stdout,"%10lu%c",cur_rng->params.gseeds[0],table_separator);
    }
  }
  fprintf(stdout,"\n");
@@ -336,7 +339,7 @@ void output_table_line_header()
  * not to output one-per-test stuff or one-per-pvalue stuff like
  * the test description or pvalue histogram.
  */
-void output_table_line(Dtest *dtest,Test **test)
+void output_table_line(Dtest *dtest,Test **test, unsigned long int seed)
 {
 
  unsigned int i;

@@ -29,7 +29,7 @@ typedef struct {
   double x[DIM_3D];
 } C3_3D;
  
-int diehard_3dsphere(Test **test, int irun, gsl_rng *cur_rng)
+int diehard_3dsphere(Test **test, int irun, random_generator_t *cur_rng)
 {
 
  int j,k;
@@ -59,7 +59,7 @@ int diehard_3dsphere(Test **test, int irun, gsl_rng *cur_rng)
    /*
     * Generate a new point in the cube.
     */
-   for(k=0;k<DIM_3D;k++) c3[j].x[k] = 1000.0*gsl_rng_uniform_pos(cur_rng);
+   for(k=0;k<DIM_3D;k++) c3[j].x[k] = 1000.0*gsl_rng_uniform_pos(cur_rng->rng);
    if(verbose == D_DIEHARD_3DSPHERE || verbose == D_ALL){
      printf("%d: (%8.2f,%8.2f,%8.2f)\n",j,c3[j].x[0],c3[j].x[1],c3[j].x[2]);
    }

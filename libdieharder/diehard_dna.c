@@ -39,7 +39,7 @@
 #include "static_get_bits.c"
 static uint mask;
 
-int diehard_dna(Test **test, int irun, gsl_rng *cur_rng)
+int diehard_dna(Test **test, int irun, random_generator_t *cur_rng)
 {
 
  uint i,j,k,l,m,n,o,p,q,r,t,boffset;
@@ -59,16 +59,16 @@ int diehard_dna(Test **test, int irun, gsl_rng *cur_rng)
  /*
   * This is pointless, I think, but it shuts -Wall up and is harmless.
   */
- i0 = gsl_rng_get(cur_rng);
- j0 = gsl_rng_get(cur_rng);
- k0 = gsl_rng_get(cur_rng);
- l0 = gsl_rng_get(cur_rng);
- m0 = gsl_rng_get(cur_rng);
- n0 = gsl_rng_get(cur_rng);
- o0 = gsl_rng_get(cur_rng);
- p0 = gsl_rng_get(cur_rng);
- q0 = gsl_rng_get(cur_rng);
- r0 = gsl_rng_get(cur_rng);
+ i0 = gsl_rng_get(cur_rng->rng);
+ j0 = gsl_rng_get(cur_rng->rng);
+ k0 = gsl_rng_get(cur_rng->rng);
+ l0 = gsl_rng_get(cur_rng->rng);
+ m0 = gsl_rng_get(cur_rng->rng);
+ n0 = gsl_rng_get(cur_rng->rng);
+ o0 = gsl_rng_get(cur_rng->rng);
+ p0 = gsl_rng_get(cur_rng->rng);
+ q0 = gsl_rng_get(cur_rng->rng);
+ r0 = gsl_rng_get(cur_rng->rng);
  boffset = 0;
 
  /*
@@ -127,7 +127,7 @@ int diehard_dna(Test **test, int irun, gsl_rng *cur_rng)
   * periodic wraparound) to be used for the next iteration.  We
   * therefore have to "seed" the process with a random l
   */
- q = gsl_rng_get(cur_rng);
+ q = gsl_rng_get(cur_rng->rng);
  /* mask = ((2 << 1)-1); */
  mask = 0x3;
  for(t=0;t<test[0]->tsamples;t++){
@@ -140,31 +140,31 @@ int diehard_dna(Test **test, int irun, gsl_rng *cur_rng)
     * the tsamples loop at tsamples = 2^15...
     */
    if(t%32 == 0) {
-     i0 = gsl_rng_get(cur_rng);
-     j0 = gsl_rng_get(cur_rng);
-     k0 = gsl_rng_get(cur_rng);
-     l0 = gsl_rng_get(cur_rng);
-     m0 = gsl_rng_get(cur_rng);
-     n0 = gsl_rng_get(cur_rng);
-     o0 = gsl_rng_get(cur_rng);
-     p0 = gsl_rng_get(cur_rng);
-     q0 = gsl_rng_get(cur_rng);
-     r0 = gsl_rng_get(cur_rng);
+     i0 = gsl_rng_get(cur_rng->rng);
+     j0 = gsl_rng_get(cur_rng->rng);
+     k0 = gsl_rng_get(cur_rng->rng);
+     l0 = gsl_rng_get(cur_rng->rng);
+     m0 = gsl_rng_get(cur_rng->rng);
+     n0 = gsl_rng_get(cur_rng->rng);
+     o0 = gsl_rng_get(cur_rng->rng);
+     p0 = gsl_rng_get(cur_rng->rng);
+     q0 = gsl_rng_get(cur_rng->rng);
+     r0 = gsl_rng_get(cur_rng->rng);
      boffset = 0;
    }
    /*
     * Get four "letters" (indices into w)
     */
-   i = get_bit_ntuple_from_uint(i0,2,mask,boffset);
-   j = get_bit_ntuple_from_uint(j0,2,mask,boffset);
-   k = get_bit_ntuple_from_uint(k0,2,mask,boffset);
-   l = get_bit_ntuple_from_uint(l0,2,mask,boffset);
-   m = get_bit_ntuple_from_uint(m0,2,mask,boffset);
-   n = get_bit_ntuple_from_uint(n0,2,mask,boffset);
-   o = get_bit_ntuple_from_uint(o0,2,mask,boffset);
-   p = get_bit_ntuple_from_uint(p0,2,mask,boffset);
-   q = get_bit_ntuple_from_uint(q0,2,mask,boffset);
-   r = get_bit_ntuple_from_uint(r0,2,mask,boffset);
+   i = get_bit_ntuple_from_uint(i0,2,mask,boffset, cur_rng->rmax_bits);
+   j = get_bit_ntuple_from_uint(j0,2,mask,boffset, cur_rng->rmax_bits);
+   k = get_bit_ntuple_from_uint(k0,2,mask,boffset, cur_rng->rmax_bits);
+   l = get_bit_ntuple_from_uint(l0,2,mask,boffset, cur_rng->rmax_bits);
+   m = get_bit_ntuple_from_uint(m0,2,mask,boffset, cur_rng->rmax_bits);
+   n = get_bit_ntuple_from_uint(n0,2,mask,boffset, cur_rng->rmax_bits);
+   o = get_bit_ntuple_from_uint(o0,2,mask,boffset, cur_rng->rmax_bits);
+   p = get_bit_ntuple_from_uint(p0,2,mask,boffset, cur_rng->rmax_bits);
+   q = get_bit_ntuple_from_uint(q0,2,mask,boffset, cur_rng->rmax_bits);
+   r = get_bit_ntuple_from_uint(r0,2,mask,boffset, cur_rng->rmax_bits);
    /* printf("%u:   %u  %u  %u  %u  %u\n",t,i,j,k,l,boffset); */
    w[i][j][k][l][m][n][o][p][q][r]++;
    boffset++;

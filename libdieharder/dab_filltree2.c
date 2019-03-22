@@ -94,7 +94,7 @@ static double targetData[128] = {  // size=128, generated from 6e9 samples
 
 inline int insertBit(uint x, uchar *array, uint *i, uint *d);
 
-int dab_filltree2(Test **test, int irun, gsl_rng *cur_rng) {
+int dab_filltree2(Test **test, int irun, random_generator_t *cur_rng) {
  int size = (ntuple == 0) ? 128 : ntuple;
  uint target = sizeof(targetData)/sizeof(double);
  int startVal = (size / 2) - 1;
@@ -128,8 +128,8 @@ int dab_filltree2(Test **test, int irun, gsl_rng *cur_rng) {
  start++;
 
 
- x = gsl_rng_get(cur_rng);
- bitCount = rmax_bits;
+ x = gsl_rng_get(cur_rng->rng);
+ bitCount = cur_rng->rmax_bits;
  for (j = 0; j < test[0]->tsamples; j++) {
    int ret;
    memset(array, 0, sizeof(*array) * size);
@@ -145,8 +145,8 @@ int dab_filltree2(Test **test, int irun, gsl_rng *cur_rng) {
        ret = insertBit(x & 0x01, array, &index, &d);  /* Keep going */
        x >>= 1;
        if (--bitCount == 0) {
-         x = gsl_rng_get(cur_rng);
-         bitCount = rmax_bits;
+         x = gsl_rng_get(cur_rng->rng);
+         bitCount = cur_rng->rmax_bits;
        }
      } while (ret == -2);  /* End of path. */
 

@@ -35,7 +35,6 @@ char table_separator;
  */
 int dtest_num;
 char dtest_name[128];
-char generator_name[128];
 
 /*
  * user_template sources are here, not in library
@@ -52,9 +51,9 @@ double strategy;
 
  void list_rngs();
  void list_tests();
- void output_rnds();
+ void output_rnds(random_generator_t *rng);
  void Exit(int);
- void time_rng();
+ void time_rng(random_generator_t *cur_rng);
  void set_globals();
  void choose_rng();
  int execute_test(int);
@@ -62,7 +61,7 @@ double strategy;
  void run_test();
  void add_ui_rngs();
  void parsecl(int argc, char **argv);
- void output(Dtest *dtest,Test **test);
+ void output(Dtest *dtest,Test **test, random_generator_t *cur_rng);
  void show_test_header(Dtest *dtest,Test **test);
  void show_test_header_debug(Dtest *dtest,Test **test);
  void test_header(Dtest *dtest);

@@ -41,7 +41,7 @@
  */
 #include "static_get_bits.c"
 
-int diehard_bitstream(Test **test, int irun, gsl_rng *cur_rng)
+int diehard_bitstream(Test **test, int irun, random_generator_t *cur_rng)
 {
 
  uint i,j,t,boffset,coffset;

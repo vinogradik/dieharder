@@ -16,14 +16,14 @@
 
 #include "dieharder.h"
 
-void testbits()
+void testbits(random_generator_t *cur_rng)
 {
 
  unsigned int input[4],output[4];
  unsigned int tuple,off;
  int pattern[10];
 
- off = get_uint_rand(rng);
+ off = get_uint_rand(cur_rng);
  printf("\n");
  printf(" off = ");
  dumpuintbits(&off,1);
@@ -52,16 +52,16 @@ void testbits()
   */
  printf("Testing get_uint_rand(rng)\n");
  printf("==============================================================================\n");
- input[0] = get_uint_rand(rng);
+ input[0] = get_uint_rand(cur_rng);
  printf("get_uint_rand(rng) = %10u = ",input[0]);
  dumpuintbits(&input[0],1);printf("\n");
- input[1] = get_uint_rand(rng);
+ input[1] = get_uint_rand(cur_rng);
  printf("get_uint_rand(rng) = %10u = ",input[1]);
  dumpuintbits(&input[1],1);printf("\n");
- input[2] = get_uint_rand(rng);
+ input[2] = get_uint_rand(cur_rng);
  printf("get_uint_rand(rng) = %10u = ",input[2]);
  dumpuintbits(&input[2],1);printf("\n");
- input[3] = get_uint_rand(rng);
+ input[3] = get_uint_rand(cur_rng);
  printf("get_uint_rand(rng) = %10u = ",input[3]);
  dumpuintbits(&input[3],1);printf("\n");
  printf("==============================================================================\n\n");
@@ -208,7 +208,7 @@ void testbits()
  tuple = 32;
  printf("Getting a %d-tuple from circulating buffer\n",tuple);
  printf("==============================================================================\n");
- get_rand_bits((void *)output,4*sizeof(unsigned int),tuple,rng);
+ get_rand_bits((void *)output,4*sizeof(unsigned int),tuple,cur_rng);
  dumpuintbits(&output[0],2);printf("\n");
  dumpuintbits(&output[2],2);printf("\n");
  printf("==================================================================\n\n");
@@ -217,7 +217,7 @@ void testbits()
  tuple = 32;
  printf("Getting a %d-tuple from circulating buffer\n",tuple);
  printf("==============================================================================\n");
- get_rand_bits((void *)output,4*sizeof(unsigned int),tuple,rng);
+ get_rand_bits((void *)output,4*sizeof(unsigned int),tuple,cur_rng);
  dumpuintbits(&output[0],2);printf("\n");
  dumpuintbits(&output[2],2);printf("\n");
  printf("==================================================================\n\n");
@@ -226,7 +226,7 @@ void testbits()
  tuple = 64;
  printf("Getting a %d-tuple from circulating buffer\n",tuple);
  printf("==============================================================================\n");
- get_rand_bits((void *)output,4*sizeof(unsigned int),tuple,rng);
+ get_rand_bits((void *)output,4*sizeof(unsigned int),tuple,cur_rng);
  dumpuintbits(&output[0],2);printf("\n");
  dumpuintbits(&output[2],2);printf("\n");
  printf("==================================================================\n\n");
@@ -234,7 +234,7 @@ void testbits()
  tuple = 16;
  printf("Getting a %d-tuple from circulating buffer\n",tuple);
  printf("==============================================================================\n");
- get_rand_bits((void *)output,4*sizeof(unsigned int),tuple,rng);
+ get_rand_bits((void *)output,4*sizeof(unsigned int),tuple,cur_rng);
  dumpuintbits(&output[0],2);printf("\n");
  dumpuintbits(&output[2],2);printf("\n");
  printf("==================================================================\n\n");
@@ -242,7 +242,7 @@ void testbits()
  tuple = 16;
  printf("Getting a %d-tuple from circulating buffer\n",tuple);
  printf("==============================================================================\n");
- get_rand_bits((void *)output,4*sizeof(unsigned int),tuple,rng);
+ get_rand_bits((void *)output,4*sizeof(unsigned int),tuple,cur_rng);
  dumpuintbits(&output[0],2);printf("\n");
  dumpuintbits(&output[2],2);printf("\n");
  printf("==================================================================\n\n");
@@ -250,7 +250,7 @@ void testbits()
  tuple = 16;
  printf("Getting a %d-tuple from circulating buffer\n",tuple);
  printf("==============================================================================\n");
- get_rand_bits((void *)output,4*sizeof(unsigned int),tuple,rng);
+ get_rand_bits((void *)output,4*sizeof(unsigned int),tuple,cur_rng);
  dumpuintbits(&output[0],2);printf("\n");
  dumpuintbits(&output[2],2);printf("\n");
  printf("==================================================================\n\n");
@@ -258,7 +258,7 @@ void testbits()
  tuple = 32;
  printf("Getting a %d-tuple from circulating buffer\n",tuple);
  printf("==============================================================================\n");
- get_rand_bits((void *)output,4*sizeof(unsigned int),tuple,rng);
+ get_rand_bits((void *)output,4*sizeof(unsigned int),tuple,cur_rng);
  dumpuintbits(&output[0],2);printf("\n");
  dumpuintbits(&output[2],2);printf("\n");
  printf("==================================================================\n\n");
@@ -266,7 +266,7 @@ void testbits()
  tuple = 24;
  printf("Getting a %d-tuple from circulating buffer\n",tuple);
  printf("==============================================================================\n");
- get_rand_bits((void *)output,4*sizeof(unsigned int),tuple,rng);
+ get_rand_bits((void *)output,4*sizeof(unsigned int),tuple,cur_rng);
  dumpuintbits(&output[0],2);printf("\n");
  dumpuintbits(&output[2],2);printf("\n");
  printf("==================================================================\n\n");

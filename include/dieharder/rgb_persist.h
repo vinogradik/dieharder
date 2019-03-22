@@ -11,7 +11,7 @@ typedef struct {
   unsigned int and_mask;
   unsigned int cumulative_mask;
 } Rgb_Persist;
-int rgb_persist(Test **test, Rgb_Persist *persist);
+int rgb_persist(Test **test, Rgb_Persist *persist, random_generator_t *cur_rng);
 
 static Dtest rgb_persist_dtest __attribute__((unused)) = {
   "RGB Bit Persistence Test",

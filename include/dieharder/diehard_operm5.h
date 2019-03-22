@@ -5,7 +5,7 @@
 /*
  * function prototype
  */
-int diehard_operm5(Test **test, int irun, gsl_rng *cur_rng);
+int diehard_operm5(Test **test, int irun, random_generator_t *cur_rng);
 
 static Dtest diehard_operm5_dtest __attribute__((unused)) = {
   "Diehard OPERM5 Test",

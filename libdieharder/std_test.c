@@ -239,19 +239,16 @@ void add_2_test(Dtest *dtest, Test **test, Test **ref_test, int count)
    /* Now we should tell the test which rng to use.
     * So we don't use global one and pass it via arguments.
    */
-   dtest->test(test,i, rng);
+   dtest->test(test,i, &generator);
  }
 
  /* If two sample test is enabled, fill ref_test using ref_rng. */
- if (ks_test == 4) {
-     /* As I could see, get_rand_bits_uint is the only get rand function
-      * that in fact stores some internal state. So it should be reset before
-      * starting tests for the reference rng.
-      */
-     get_rand_bits_uint (0, 0, NULL,1);
+ if (etalon_enabled) {
+     //temp solution: we should reset bit buffers when switch between generators
+     reset_bit_buffers();
      for(i = test[0]->psamples; i < imax; i++){
-        dtest->test(ref_test,i, ref_rng);
-      }
+        dtest->test(ref_test,i, &etalon_generator);
+     }
   }
 
  for(j = 0;j < dtest->nkps;j++){
@@ -261,8 +258,8 @@ void add_2_test(Dtest *dtest, Test **test, Test **ref_test, int count)
     */
    test[j]->psamples += count;
 
-   if (ks_test == 4) {
-       /* Now we have two arrays of the same size with st_values from rng and ref_rng.
+   if (etalon_enabled) {
+       /* Now we have two arrays of the same size with st_values from rng and etalon_rng.
         * We compare them using two_sample_ks_test and get the final ks_pvalue.
         * One value is omitted because then ks_pvalue is less discrete.*/
 	   test[j]->ks_pvalue = (test[j]->psamples > 1)?
@@ -282,8 +279,6 @@ void add_2_test(Dtest *dtest, Test **test, Test **ref_test, int count)
    }
 
  }
- /* printf("test[0]->ks_pvalue = %f\n",test[0]->ks_pvalue); */
-
 }
    
 /*

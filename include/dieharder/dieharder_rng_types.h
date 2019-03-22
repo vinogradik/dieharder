@@ -77,6 +77,3 @@
  unsigned int dh_num_hardware_rngs;  /* hardware rngs supported in libdieharder */
  unsigned int dh_num_user_rngs;      /* user-added rngs */
  unsigned int dh_num_reserved_rngs;  /* ngs added in reserved space by new UI */
-
- gsl_rng *rng;                  /* global gsl random number generator */
-

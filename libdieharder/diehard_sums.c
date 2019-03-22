@@ -48,7 +48,7 @@
 
 #include <dieharder/libdieharder.h>
 
-int diehard_sums(Test **test, int irun, gsl_rng *cur_rng)
+int diehard_sums(Test **test, int irun, random_generator_t *cur_rng)
 {
 
  int m,t;
@@ -177,7 +177,7 @@ int diehard_sums(Test **test, int irun, gsl_rng *cur_rng)
    printf("# Initializing initial y[0] and rand_list\n");
  }
  for(t=0;t<m;t++){
-   rand_list[t] = gsl_rng_uniform(cur_rng);
+   rand_list[t] = gsl_rng_uniform(cur_rng->rng);
    y[0] += rand_list[t];
    if(verbose == D_DIEHARD_SUMS || verbose == D_ALL){
      printf("y[0] =  y[0] + %f = %f\n",rand_list[t],y[0]);
@@ -194,7 +194,7 @@ int diehard_sums(Test **test, int irun, gsl_rng *cur_rng)
     * Each successive sum is the previous one, with its first
     * entry in rand_list[] removed.
     */
-   newrand = gsl_rng_uniform(cur_rng);
+   newrand = gsl_rng_uniform(cur_rng->rng);
    y[t] = y[t-1] - rand_list[t-1] + newrand;
    if(verbose == D_DIEHARD_SUMS || verbose == D_ALL){
      printf("y[%u] =  %f - %f + %f = %f (raw)\n",t,y[t-1],rand_list[t-1],newrand,y[t]);

@@ -22,7 +22,7 @@
  */
 #include <dieharder/libdieharder.h>
 
-#define RotL(x,N)    (rmax_mask & (((x) << (N)) | ((x) >> (rmax_bits-(N)))))
+#define RotL(x,N, rmax_mask, rmax_bits)    (rmax_mask & (((x) << (N)) | ((x) >> (rmax_bits-(N)))))
 #define CYCLES 4
 
 static double targetData1[] __attribute__((unused)) = {
@@ -36,7 +36,7 @@ static double targetData[] = {
 
 inline int insert(double x, double *array, unsigned int startVal);
 
-int dab_filltree(Test **test,int irun, gsl_rng *cur_rng) {
+int dab_filltree(Test **test,int irun, random_generator_t *cur_rng) {
  int size = (ntuple == 0) ? 32 : ntuple;
  unsigned int target = sizeof(targetData)/sizeof(double);
  int startVal = (size / 2) - 1;
@@ -74,9 +74,9 @@ int dab_filltree(Test **test,int irun, gsl_rng *cur_rng) {
    memset(array, 0, sizeof(double) * size);
    i = 0;
    do {
-     unsigned int v = gsl_rng_get(cur_rng);
+     unsigned int v = gsl_rng_get(cur_rng->rng);
 
-     x = ((double) RotL(v, rotAmount)) / rmax_mask;
+     x = ((double) RotL(v, rotAmount, cur_rng->rmax_mask, cur_rng->rmax_bits)) / cur_rng->rmax_mask;
      i++;
      if (i > size * 2) {
        test[0]->pvalues[irun] = 0;

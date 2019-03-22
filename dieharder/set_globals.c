@@ -15,24 +15,24 @@ void set_globals()
  binary = NO;           /* Do output a random stream in binary (with -o) */
  dtest_num = -1;        /* -1 means no test selected */
  dtest_name[0] = (char)0; /* empty test name is also default */
- filename[0] = (char)0; /* No input file */
- fromfile = 0;          /* Not from an input file */
+ fromfile = 0;          /* No file input by default*/
+ memset(&generator, 0, sizeof(random_generator_t)); /*assign tested random generator with zeros*/
+ memset(&etalon_generator, 0, sizeof(random_generator_t)); /*assign etalon random generator with zeros*/
  ks_test = 0;           /* Default is 0, Symmetrized KS test */
  output_file = 0;       /* No output file */
  output_format = 1;     /* uint output format if you use -o alone */
  /* Cruft overlap = 1;           / * Default is to use overlapping samples */
  multiply_p = 1;        /* Default is to use default number of psamples */
- gnumbs[0] = 13;        /* Default is mt19937 as a "good" generator */
- generator_name[0] = (char)0; /* empty generator name is default */
- gvcount = 0;           /* Count of generators so far */
- gscount = 0;           /* Count of seeds so far */
+ generator.params.gnumbs[0] = 13; /* Default is mt19937 as a "good" generator */
+ etalon_generator.params.is_etalon = 1; /*mark etalon random generator*/
+ etalon_enabled = NO;   /* Etalon comparison is disabled by default*/
+ etalon_xor = NO;       /* XOR with etalon is disabled */
  help_flag = NO;        /* No help requested */
  iterations = -1;	/* For timing loop, set iterations to be timed */
  list = NO;             /* List all generators */
  ntuple = 0;            /* n-tuple size for n-tuple tests (0 means all) */
  overlap = 1;           /* Default is to use overlapping samples in tests that support a choice */
  psamples = 0;          /* This value precipitates use of test defaults */
- seed = 0;              /* saves the current (possibly randomly selected) seed */
  strategy = 0;          /* Means use seed (random or otherwise) from beginning of run */
  Seed = 0;              /* user selected seed.  != 0 surpresses reseeding per sample.*/
  tsamples = 0;          /* This value precipitates use of test defaults */

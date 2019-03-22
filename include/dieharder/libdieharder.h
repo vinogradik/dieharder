@@ -37,6 +37,7 @@
 #include <gsl/gsl_vector.h>
 #include <gsl/gsl_matrix.h>
 #include <gsl/gsl_eigen.h>
+typedef struct random_generator random_generator_t;
 #include <dieharder/Dtest.h>
 #include <dieharder/parse.h>
 #include <dieharder/verbose.h>
@@ -103,7 +104,7 @@
  double chisq_poisson(unsigned int *observed,double lambda,int kmax,unsigned int nsamp);
  double chisq_binomial(double *observed,double prob,unsigned int kmax,unsigned int nsamp);
  double chisq_pearson(double *observed,double *expected,int kmax);
- double sample(void *testfunc());
+ double sample(void *testfunc(), random_generator_t *cur_rng);
  /* This new function takes two pointers two arrays of length n and m respectively
   * and returns ks_pvalue according to two-sample Kolmogorov - Smirnov test.
   */
@@ -115,26 +116,25 @@
 
  void histogram(double *input, char *pvlabel, int inum, double min, double max, int nbins, char *label);
 
- unsigned int get_bit_ntuple(unsigned int *bitstring,unsigned int bslen,unsigned int blen,unsigned int boffset);
+ unsigned int get_bit_ntuple(unsigned int *bitstring,unsigned int bslen,unsigned int blen,unsigned int boffset, random_generator_t *cur_rng);
  void dumpbits(unsigned int *data, unsigned int nbits);
  void dumpbitwin(unsigned int data, unsigned int nbits);
  void dumpuintbits(unsigned int *data, unsigned int nbits);
  void cycle(unsigned int *data, unsigned int nbits);
- int get_bit(unsigned int *rand_uint, unsigned int n);
- int get_bit(unsigned int *rand_uint, unsigned int n);
+ int get_bit(unsigned int *rand_uint, unsigned int n, unsigned int rmax_bits);
  void dumpbits_left(unsigned int *data, unsigned int nbits);
  unsigned int bit2uint(char *abit,unsigned int blen);
- void fill_uint_buffer(unsigned int *data,unsigned int buflength);
+ void fill_uint_buffer(unsigned int *data,unsigned int buflength, random_generator_t *cur_rng);
  unsigned int b_umask(unsigned int bstart,unsigned int bstop);
  unsigned int b_window(unsigned int input,unsigned int bstart,unsigned int bstop,unsigned int boffset);
  unsigned int b_rotate_left(unsigned int input,unsigned int shift);
  unsigned int b_rotate_right(unsigned int input, unsigned int shift);
  void get_ntuple_cyclic(unsigned int *input,unsigned int ilen,
     unsigned int *output,unsigned int jlen,unsigned int ntuple,unsigned int offset);
- unsigned int get_uint_rand(gsl_rng *gsl_rng);
- void get_rand_bits(void *result,unsigned int rsize,unsigned int nbits,gsl_rng *gsl_rng);
+ unsigned int get_uint_rand(random_generator_t *generator);
+ void get_rand_bits(void *result,unsigned int rsize,unsigned int nbits, random_generator_t *cur_rng);
  void mybitadd(char *dst, int doffset, char *src, int soffset, int slen);
- void get_rand_pattern(void *result,unsigned int rsize,int *pattern,gsl_rng *gsl_rng);
+ void get_rand_pattern(void *result,unsigned int rsize,int *pattern, random_generator_t* cur_rng);
  void reset_bit_buffers();
 
 /* Cruft
@@ -156,7 +156,8 @@
  unsigned int binary;           /* Flag to output rands in binary (with -o -f) */
  unsigned int bits;             /* bitstring size (in bits) */
  unsigned int diehard;          /* Diehard test number */
- unsigned int generator;        /* GSL generator id number to be tested */
+ unsigned int etalon_enabled;   /* flag is 1 if comparison with etalon generator is enabled*/
+ unsigned int etalon_xor;       /* flag is 1 if xor with etalon is used*/
  /*
   * We will still need generator above, if only to select the XOR
   * generator.  I need to make its number something that will pretty much
@@ -173,11 +174,6 @@
   * of the built in generators.
   */
 #define GVECMAX 100
- char gnames[GVECMAX][128];  /* VECTOR of names to be XOR'd into a "super" generator */
- unsigned int gseeds[GVECMAX];       /* VECTOR of unsigned int seeds used for the "super" generators */
- unsigned int gnumbs[GVECMAX];       /* VECTOR of GSL generators to be XOR'd into a "super" generator */
- unsigned int gvcount;               /* Number of generators to be XOR'd into a "super" generator */
- unsigned int gscount;               /* Number of seeds entered on the CL in XOR mode */
  unsigned int help_flag;        /* Help flag */
  unsigned int hist_flag;        /* Histogram display flag */
  unsigned int iterations;	/* For timing loop, set iterations to be timed */
@@ -188,13 +184,14 @@
  unsigned int ntuple;           /* n-tuple size for n-tuple tests */
  unsigned int num_randoms;      /* the number of randoms stored into memory and usable */
  unsigned int output_file;      /* equals 1 if you output to file, otherwise 0. */
+ char output_filename[K];       /*filename for generator output*/
  unsigned int output_format;    /* equals 0 (binary), 1 (unsigned int), 2 (decimal) output */
  unsigned int overlap;          /* 1 use overlapping samples, 0 don't (for tests with the option) */
  unsigned int psamples;         /* Number of test runs in final KS test */
  unsigned int quiet;            /* quiet flag -- surpresses full output report */
  unsigned int rgb;              /* rgb test number */
  unsigned int sts;              /* sts test number */
- unsigned int Seed;             /* user selected seed.  Surpresses reseeding per sample.*/
+ unsigned long int Seed;        /* user selected seed.  Surpresses reseeding per sample.*/
  off_t tsamples;        /* Generally should be "a lot".  off_t is u_int64_t. */
  unsigned int user;             /* user defined test number */
  unsigned int verbose;          /* Default is not to be verbose. */
@@ -242,7 +239,6 @@
  off_t file_input_get_rtot(gsl_rng *rng);
  void file_input_set_rtot(gsl_rng *rng,unsigned int value);
 
- char filename[K];      /* Input file name */
  int fromfile;		/* set true if file is used for rands */
  int filenumbits;	/* number of bits per integer */
  /*
@@ -269,15 +265,48 @@
     off_t rptr;
     off_t rtot;
     unsigned int rewind_cnt;
-  } file_input_state_t;
+    char *filename; /* now every file input gsl_rng has it's own filename*/
+    unsigned int first; /* former static variable in file_input_raw_set*/
+ } file_input_state_t;
 
+ /*struct with all command line parameters of complex random generator*/
+ typedef struct {
+   unsigned int gnumbs[GVECMAX];      /* VECTOR of GSL generators to be XOR'd into a "super" generator */
+   char gnames[GVECMAX][128];         /* VECTOR of names to be XOR'd into a "super" generator */
+   unsigned int gvcount;              /* Number of generators to be XOR'd into a "super" generator */
+   unsigned long int gseeds[GVECMAX]; /* VECTOR of unsigned long int seeds used for the "super" generators */
+   unsigned int gscount;              /* Number of seeds entered on the CL in XOR mode */
+   char filenames[GVECMAX][K];        /* VECTOR of filenames for XOR */
+   unsigned int fcount;               /* Number of filenames */
+   unsigned int gfilenum[GVECMAX];    /* VECTOR with indexes of filenames corresponding to each generator */
+   unsigned int is_etalon;            /* flag whether complex generator is used as etalon */
+ } input_params_t;
+
+ /*struct of complex generator*/
+#define BRBUF 6
+ struct random_generator{
+   gsl_rng *rng;                  /* VECTOR of gsl generators */
+   input_params_t params;       /* command line parameters of complex generator */
+   unsigned int random_max;       /* maximum rng returned by generator */
+   unsigned int rmax;             /* scratch space for random_max manipulation */
+   unsigned int rmax_bits;        /* Number of valid bits in rng */
+   unsigned int rmax_mask;        /* Mask for valid section of unsigned int */
+   /* read buffer parameters*/
+   unsigned int bits_rand[2];
+   int bleft;
+   unsigned int bits_randbuf[BRBUF];
+   unsigned int bits_output[BRBUF];
+   int brindex;
+   int iclear;
+   int bitindex;
+ };
 
  /*
   * rng global vectors and variables for setup and tests.
   */
  const gsl_rng_type **types;       /* where all the rng types go */
- gsl_rng *rng;               /* global gsl random number generator */
- gsl_rng *ref_rng;           /* reference random number generator used in two-sample mode */
+ random_generator_t generator;             /* complex random number generator for testing*/
+ random_generator_t etalon_generator;      /* reference complex random number generator used in two-sample mode */
 
  /*
   * All required for GSL Singular Value Decomposition (to obtain
@@ -286,11 +315,6 @@
  gsl_matrix *A,*V;
  gsl_vector *S,*svdwork;
 
- unsigned long int seed;             /* rng seed of run (?) */
- unsigned int random_max;       /* maximum rng returned by generator */
- unsigned int rmax;             /* scratch space for random_max manipulation */
- unsigned int rmax_bits;        /* Number of valid bits in rng */
- unsigned int rmax_mask;        /* Mask for valid section of unsigned int */
  
 /*
  * dTuple is used in a couple of my tests, but it seems like an
@@ -303,4 +327,5 @@
 typedef struct {
   double c[RGB_MINIMUM_DISTANCE_MAXDIM];
 } dTuple;
- 
+
+gsl_rng *wrap_gsl_rng_alloc (input_params_t *params, unsigned int curr_gnum);

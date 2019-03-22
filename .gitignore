@@ -4,3 +4,15 @@
 \.project
 
 \.settings/
+
+*.o
+
+*.lo
+
+dieharder/\.deps/
+
+dieharder/\.libs/
+
+libdieharder/\.deps/
+
+libdieharder/\.libs/

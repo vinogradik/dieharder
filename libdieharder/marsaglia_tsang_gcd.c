@@ -145,7 +145,7 @@ double kprob2[KTBLSIZE] = {
  2.26719e-07, 4.1078e-08,  6.431e-09,    8.8e-10,    1.2e-10,};
 
 
-int marsaglia_tsang_gcd(Test **test, int irun, gsl_rng *cur_rng)
+int marsaglia_tsang_gcd(Test **test, int irun, random_generator_t *cur_rng)
 {
 
  unsigned long long int t,ktbl[KTBLSIZE];

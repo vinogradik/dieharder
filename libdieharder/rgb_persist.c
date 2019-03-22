@@ -21,7 +21,7 @@
 
 #include <dieharder/libdieharder.h>
 
-int rgb_persist(Test **test, Rgb_Persist *persist)
+int rgb_persist(Test **test, Rgb_Persist *persist, random_generator_t *cur_rng)
 {
 
  uint last_rand;
@@ -43,14 +43,16 @@ int rgb_persist(Test **test, Rgb_Persist *persist)
     * files -- let them auto-rewind as needed.  Otherwise try
     * different seeds for different samples.
     */
-   if(strncmp("file_input",gsl_rng_name(rng),10)){
-     seed = random_seed();
-     gsl_rng_set(rng,seed);
+   if(strncmp("file_input",gsl_rng_name(cur_rng->rng),10)){
+     for (int i = 0; i < cur_rng->params.gscount; i++) {
+       cur_rng->params.gseeds[i] = random_seed();
+     }
+     gsl_rng_set(cur_rng->rng,cur_rng->params.gseeds[0]);
    }
    /*
     * Fill rgb_persist_rand_uint with a string of random numbers
     */
-   for(i=0;i<256;i++) rgb_persist_rand_uint[i] = gsl_rng_get(rng);
+   for(i=0;i<256;i++) rgb_persist_rand_uint[i] = gsl_rng_get(cur_rng->rng);
    last_rand = rgb_persist_rand_uint[0];  /* to start it */
    persist->and_mask = ~(last_rand ^ rgb_persist_rand_uint[0]);
    for(i=0;i<256;i++){
@@ -71,7 +73,7 @@ int rgb_persist(Test **test, Rgb_Persist *persist)
      }
 
    }
-   persist->and_mask = persist->and_mask & rmax_mask;
+   persist->and_mask = persist->and_mask & cur_rng->rmax_mask;
    persist->cumulative_mask = persist->cumulative_mask | persist->and_mask;
  }
 

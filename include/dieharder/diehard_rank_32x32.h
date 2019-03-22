@@ -5,7 +5,7 @@
 /*
  * function prototype
  */
-int diehard_rank_32x32(Test **test,int irun, gsl_rng* cur_rng);
+int diehard_rank_32x32(Test **test,int irun, random_generator_t *cur_rng);
 
 static Dtest diehard_rank_32x32_dtest __attribute__((unused)) = {
   "Diehard 32x32 Binary Rank Test",

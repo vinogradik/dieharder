@@ -17,7 +17,7 @@
 
 #include "dieharder.h"
 
-void time_rng()
+void time_rng(random_generator_t *cur_rng)
 {
 
  /*
@@ -35,7 +35,7 @@ void time_rng()
  /*
   * Call the actual test that fills in the results struct.
   */
- rgb_timing(rgb_timing_test,&timing);
+ rgb_timing(rgb_timing_test,&timing, cur_rng);
 
  /*
   * Save this for display in 

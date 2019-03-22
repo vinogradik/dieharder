@@ -15,7 +15,7 @@
 
 #include "dieharder.h"
 
-void output_rnds()
+void output_rnds(random_generator_t *cur_rng)
 {
 
  unsigned int i,j;
@@ -30,17 +30,16 @@ void output_rnds()
   * If Seed is set, use it.  Otherwise reseed from /dev/random
   */
  if(Seed){
-   seed = Seed;
    if(verbose) {
-     fprintf(stderr,"# output_rnds: seeding rng %s with %lu\n",gsl_rng_name(rng),seed);
+     fprintf(stderr,"# output_rnds: seeding rng %s with %lu\n",gsl_rng_name(cur_rng->rng),Seed);
    }
-   gsl_rng_set(rng,seed);
+   gsl_rng_set(cur_rng->rng,Seed);
  } else {
-   seed = random_seed();
+   Seed = cur_rng->params.gseeds[0] = random_seed();
    if(verbose) {
-     fprintf(stderr,"# output_rnds: seeding rng %s with %lu\n",gsl_rng_name(rng),seed);
+     fprintf(stderr,"# output_rnds: seeding rng %s with %lu\n",gsl_rng_name(cur_rng->rng),Seed);
    }
-   gsl_rng_set(rng,seed);
+   gsl_rng_set(cur_rng->rng, Seed);
  }
 
  /*
@@ -48,19 +47,19 @@ void output_rnds()
   * filename is "-", use stdout.
   */
  if(verbose) {
-   fprintf(stderr,"# output_rnds: Opening file %s\n",filename);
+   fprintf(stderr,"# output_rnds: Opening file %s\n",output_filename);
  }
- if( (filename[0] == 0) || (strncmp("-",filename,1)==0) ){
+ if( (output_filename[0] == 0) || (strncmp("-",output_filename,1)==0) ){
    fp = stdout;
  } else {
-   if ((fp = fopen(filename,"w")) == NULL) {
-     fprintf(stderr,"Error: Cannot open %s, exiting.\n",filename);
+   if ((fp = fopen(output_filename,"w")) == NULL) {
+     fprintf(stderr,"Error: Cannot open %s, exiting.\n",output_filename);
      exit(0);
    }
  }
 
  if(verbose) {
-   fprintf(stderr,"# output_rnds: Opened %s\n",filename);
+   fprintf(stderr,"# output_rnds: Opened %s\n",output_filename);
  }
  /*
   * We completely change the way we control output.
@@ -74,7 +73,7 @@ void output_rnds()
  switch(output_format){
    case 0:
      if(verbose) {
-       fprintf(stderr,"Ascii values of binary data being written into file %s:\n",filename);
+       fprintf(stderr,"Ascii values of binary data being written into file %s:\n",output_filename);
      }
      /*
       * make the samples and output them.  If we run binary with tsamples
@@ -83,7 +82,7 @@ void output_rnds()
       */
      if(tsamples > 0){
        for(i=0;i<tsamples;i++){
-         j = gsl_rng_get(rng);
+         j = gsl_rng_get(cur_rng->rng);
          fwrite(&j,sizeof(unsigned int),1,fp);
          /*
           * Printing to stderr lets me read it and pass the binaries on through
@@ -102,7 +101,7 @@ void output_rnds()
         * dieharder dies).
         */
        while(1){
-         j = gsl_rng_get(rng);
+         j = gsl_rng_get(cur_rng->rng);
          fwrite(&j,sizeof(unsigned int),1,fp);
          /*
           * Printing to stderr lets me read it and pass the binaries on through
@@ -116,21 +115,21 @@ void output_rnds()
      break;
    case 1:
      fprintf(fp,"#==================================================================\n");
-     fprintf(fp,"# generator %s  seed = %lu\n",gsl_rng_name(rng),seed);
+     fprintf(fp,"# generator %s  seed = %lu\n",gsl_rng_name(cur_rng->rng),Seed);
      fprintf(fp,"#==================================================================\n");
      fprintf(fp,"type: d\ncount: %lu\nnumbit: 32\n",tsamples);
      for(i=0;i<tsamples;i++){
-       j = gsl_rng_get(rng);
+       j = gsl_rng_get(cur_rng->rng);
        fprintf(fp,"%10u\n",j);
      }
      break;
    case 2:
      fprintf(fp,"#==================================================================\n");
-     fprintf(fp,"# generator %s  seed = %lu\n",gsl_rng_name(rng),seed);
+     fprintf(fp,"# generator %s  seed = %lu\n",gsl_rng_name(cur_rng->rng),Seed);
      fprintf(fp,"#==================================================================\n");
      fprintf(fp,"type: f\ncount: %lu\nnumbit: 32\n",tsamples);
      for(i=0;i<tsamples;i++){
-       d = gsl_rng_uniform(rng);
+       d = gsl_rng_uniform(cur_rng->rng);
        fprintf(fp,"%0.10f\n",d);
      }
      break;

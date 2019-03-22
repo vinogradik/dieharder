@@ -5,7 +5,7 @@
 /*
  * function prototype
  */
-int rgb_bitdist(Test **test,int irun, gsl_rng *cur_rng);
+int rgb_bitdist(Test **test,int irun, random_generator_t *cur_rng);
 
 static Dtest rgb_bitdist_dtest __attribute__((unused)) = {
   "RGB Bit Distribution Test",

@@ -72,7 +72,7 @@
  *========================================================================
  */
 
-int user_template(Test **test,int irun)
+int user_template(Test **test,int irun, random_generator_t *cur_rng)
 {
 
  unsigned int t,i,lag;
@@ -105,10 +105,10 @@ int user_template(Test **test,int irun)
     */
 
    /* Throw away lag per sample */
-   for(i=0;i<lag;i++) gsl_rng_uniform(rng);
+   for(i=0;i<lag;i++) gsl_rng_uniform(cur_rng->rng);
 
    /* sample only every lag numbers, reset counter */
-   ptest.x += gsl_rng_uniform(rng);
+   ptest.x += gsl_rng_uniform(cur_rng->rng);
 
  }
 

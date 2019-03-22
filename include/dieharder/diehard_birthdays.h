@@ -5,7 +5,7 @@
 /*
  * function prototype
  */
-int diehard_birthdays(Test **test, int irun, gsl_rng *cur_rng);
+int diehard_birthdays(Test **test, int irun, random_generator_t *cur_rng);
 
 static Dtest diehard_birthdays_dtest __attribute__((unused)) = {
   "Diehard Birthdays Test",

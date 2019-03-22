@@ -5,7 +5,7 @@
 /*
  * function prototype
  */
-int sts_runs(Test **test,int irun, gsl_rng *rng);
+int sts_runs(Test **test,int irun, random_generator_t *rng);
 
 static Dtest sts_runs_dtest __attribute__((unused)) = {
   "STS Runs Test",

@@ -81,7 +81,7 @@
  * to be tested, once per test.
  */
 
-int sts_serial(Test **test,int irun, gsl_rng *cur_rng)
+int sts_serial(Test **test,int irun, random_generator_t *cur_rng)
 {
 
  uint bsize;       /* number of bits/samples in uintbuf */

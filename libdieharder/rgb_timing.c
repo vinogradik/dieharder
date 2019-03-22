@@ -15,7 +15,7 @@
 
 #include <dieharder/libdieharder.h>
 
-int rgb_timing(Test **test, Rgb_Timing *timing)
+int rgb_timing(Test **test, Rgb_Timing *timing, random_generator_t *cur_rng)
 {
 
  double total_time,avg_time;
@@ -26,8 +26,11 @@ int rgb_timing(Test **test, Rgb_Timing *timing)
    printf("# Entering rgb_timing(): ps = %u  ts = %u\n",test[0]->psamples,test[0]->tsamples);
  }
 
- seed = random_seed();
- gsl_rng_set(rng,seed);
+ for (int i = 0; i < cur_rng->params.gscount; i++) {
+   cur_rng->params.gseeds[i] = random_seed();
+ }
+ gsl_rng_set(cur_rng->rng,cur_rng->params.gseeds[0]);
+
 
  rand_uint = (uint *)malloc((size_t)test[0]->tsamples*sizeof(uint));
 
@@ -35,7 +38,7 @@ int rgb_timing(Test **test, Rgb_Timing *timing)
  for(i=0;i<test[0]->psamples;i++){
    start_timing();
    for(j=0;j<test[0]->tsamples;j++){
-     rand_uint[j] = gsl_rng_get(rng);
+     rand_uint[j] = gsl_rng_get(cur_rng->rng);
    }
    stop_timing();
    total_time += delta_timing();

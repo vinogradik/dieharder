@@ -127,8 +127,8 @@ int rgb_lmn()
   * Reseed FILE random number generators once per individual test.
   * This correctly resets the rewind counter per test.
   */
- if(strncmp("file_input",gsl_rng_name(rng),10) == 0){
-   gsl_rng_set(rng,1);
+ if(strncmp("file_input",gsl_rng_name(generator),10) == 0){
+   gsl_rng_set(generator,1);
  }
 
  /* show_test_header(dtest); */
@@ -200,10 +200,10 @@ void rgb_lmn_test()
     */
 
    /* Throw away lag-1 per sample */
-   for(i=0;i<(lag-1);i++) gsl_rng_uniform(rng);
+   for(i=0;i<(lag-1);i++) gsl_rng_uniform(generator);
 
    /* sample only every lag numbers, reset counter */
-   ptest.x += gsl_rng_uniform(rng);
+   ptest.x += gsl_rng_uniform(generator);
 
  }
 

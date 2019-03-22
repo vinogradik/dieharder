@@ -58,21 +58,25 @@ int execute_test(int dtest_num)
   */
  if(strategy){
    if(Seed == 0){
-     seed = random_seed();
-     MYDEBUG(D_SEED){
-       fprintf(stdout,"# execute_test(): Generating random seed %lu\n",seed);
+     for (int i = 0; i < generator.params.gscount; i++) {
+       generator.params.gseeds[i] = random_seed();
      }
-   } else {
-     seed = Seed;
-     MYDEBUG(D_SEED){
-       fprintf(stdout,"# execute_test(): Setting fixed seed %lu\n",seed);
+     //MYDEBUG(D_SEED){
+       //fprintf(stdout,"# execute_test(): Generating random seed %lu\n",seed);
+     //}
+     if (etalon_enabled) {
+       for (int i = 0; i < etalon_generator.params.gscount; i++) {
+         etalon_generator.params.gseeds[i] = random_seed();
+       }
      }
+   //} else {
+     //MYDEBUG(D_SEED){
+       //fprintf(stdout,"# execute_test(): Setting fixed seed %lu\n",seed);
+     //}
    }
-   gsl_rng_set(rng,seed);
-
-   /* Set seed for the test of the reference rng. */
-   if(ks_test == 4){
-     gsl_rng_set(ref_rng, seed);
+   gsl_rng_set(generator.rng,generator.params.gseeds[0]);
+   if (etalon_enabled) {
+     gsl_rng_set(etalon_generator.rng,etalon_generator.params.gseeds[0]);
    }
 
  }
@@ -86,9 +90,9 @@ int execute_test(int dtest_num)
  dieharder_test = create_test(dh_test_types[dtest_num],tsamples,psamples);
 
  /* Create the test for the reference rng. */
- if (ks_test == 4){
-   ref_test = create_test(dh_test_types[dtest_num],tsamples,psamples);
- }
+
+ ref_test = create_test(dh_test_types[dtest_num],tsamples,psamples);
+
  /*
   * We now have to implement Xtrategy.  Since std_test is now smart enough
   * to be able to differentiate a first call after creation or clear from
@@ -102,7 +106,7 @@ int execute_test(int dtest_num)
  need_more_p = YES;
  while(need_more_p){
    std_test(dh_test_types[dtest_num],dieharder_test, ref_test);
-   output(dh_test_types[dtest_num],dieharder_test);
+   output(dh_test_types[dtest_num],dieharder_test, &generator);
    smallest_p = 0.5;
    for(i = 0; i < dh_test_types[dtest_num]->nkps ; i++){
      if(0.5 - fabs(dieharder_test[i]->ks_pvalue - 0.5) < smallest_p) {
@@ -148,9 +152,8 @@ int execute_test(int dtest_num)
  destroy_test(dh_test_types[dtest_num],dieharder_test);
 
  /* Destroy the test of the reference rng. */
- if (ks_test == 4){
-   destroy_test(dh_test_types[dtest_num],ref_test);
- }
+ destroy_test(dh_test_types[dtest_num],ref_test);
+
  return(0);
 
 }

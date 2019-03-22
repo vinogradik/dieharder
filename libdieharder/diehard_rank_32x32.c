@@ -29,7 +29,7 @@
  */
 #include "static_get_bits.c"
 
-int diehard_rank_32x32(Test **test, int irun, gsl_rng *cur_rng)
+int diehard_rank_32x32(Test **test, int irun, random_generator_t *cur_rng)
 {
 
  int i,t,rank;

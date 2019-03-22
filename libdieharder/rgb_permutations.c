@@ -16,7 +16,7 @@ uint nperms;
 double fpipi(int pi1,int pi2,int nkp);
 uint rgb_permutations_k;
 
-int rgb_permutations(Test **test,int irun, gsl_rng *cur_rng)
+int rgb_permutations(Test **test,int irun, random_generator_t *cur_rng)
 {
 
  uint i,k,permindex=0,t;
@@ -103,7 +103,7 @@ int rgb_permutations(Test **test,int irun, gsl_rng *cur_rng)
     * To sort into a perm, test vector needs to be double.
     */
    for(i=0;i<k;i++) {
-     testv[i] = (double) gsl_rng_get(cur_rng);
+     testv[i] = (double) gsl_rng_get(cur_rng->rng);
      MYDEBUG(D_RGB_PERMUTATIONS){
        printf("# rgb_permutations: testv[%u] = %u\n",i,(uint) testv[i]);
      }

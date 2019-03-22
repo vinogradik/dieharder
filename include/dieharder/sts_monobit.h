@@ -5,7 +5,7 @@
 /*
  * function prototype
  */
-int sts_monobit(Test **test,int irun, gsl_rng *rng);
+int sts_monobit(Test **test,int irun, random_generator_t *rng);
 
 static Dtest sts_monobit_dtest __attribute__((unused)) = {
   "STS Monobit Test",
