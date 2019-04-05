@@ -209,9 +209,9 @@ int select_rng(random_generator_t *cur_rng)
      fprintf(stdout,"# choose_rng(): freeing old gennum %s\n",gsl_rng_name(cur_rng->rng));
    }
    gsl_rng_free(cur_rng->rng);
-   reset_bit_buffers();
  }
 
+ reset_bit_buffers(&cur_rng->read_buffer);
  /*
   * We should now be "certain" that it is safe to allocate a new gennum
   * without leaking memory.
@@ -382,7 +382,7 @@ int select_XOR(random_generator_t *cur_rng)
      fprintf(stdout,"# choose_rng(): freeing old gennum %s\n",gsl_rng_name(cur_rng->rng));
    }
    gsl_rng_free(cur_rng->rng);
-   reset_bit_buffers();
+   reset_bit_buffers(&cur_rng->read_buffer);
  }
 
  /*

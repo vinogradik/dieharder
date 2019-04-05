@@ -898,28 +898,27 @@ void get_ntuple_cyclic(unsigned int *input,unsigned int ilen,
  * by the calling routine.
  */
 
-static unsigned int bits_rand[2];   /* A buffer that can handle partial returns */
-static int bleft = -1; /* Number of bits we still need in rand[1] */
 
 unsigned int get_uint_rand(random_generator_t *cur_rng)
 {
 
  static unsigned int bl,bu,tmp;
+ read_buffer_params_t *rb = &cur_rng->read_buffer;
 
  /*
   * First call -- initialize/fill bits_rand from current rng.  bl and bu
   * should be static so they are preserved for later calls.
   */
- if(bleft == -1){
+ if(rb->bleft == -1){
    /* e.g. 32 */
    bu = sizeof(unsigned int)*CHAR_BIT;
    /* e.g. 32 - 31 = 1 for a generator that returns 31 bits */
    bl = bu - cur_rng->rmax_bits;
    /* For the first call, we start with bits_rand[1] all or partially filled */
-   bits_rand[0] = 0;
-   bits_rand[1] = gsl_rng_get(cur_rng->rng);
+   rb->bits_rand[0] = 0;
+   rb->bits_rand[1] = gsl_rng_get(cur_rng->rng);
    /* This is how many bits we still need. */
-   bleft = bu - cur_rng->rmax_bits;
+   rb->bleft = bu - cur_rng->rmax_bits;
    /*
     * The state of the generator is now what it would be on a
     * typical running call.  bits_rand[1] contains the leftover bits from the
@@ -932,9 +931,9 @@ unsigned int get_uint_rand(random_generator_t *cur_rng)
    MYDEBUG(D_BITS) {
      printf("bu = %d bl = %d\n",bu,bl);
      printf("  init: |");
-     dumpbits(&bits_rand[0],bu);
+     dumpbits(&rb->bits_rand[0],bu);
      printf("|");
-     dumpbits(&bits_rand[1],bu);
+     dumpbits(&rb->bits_rand[1],bu);
      printf("|\n");
    }
  }
@@ -943,68 +942,68 @@ unsigned int get_uint_rand(random_generator_t *cur_rng)
   * We have to iterate into range because it is quite possible that
   * rmax_bits won't be enough to fill bits_rand[1].
   */
- while(bleft > cur_rng->rmax_bits){
+ while(rb->bleft > cur_rng->rmax_bits){
    /* Get a bits_rand's worth (rmax_bits) into bits_rand[0] */
-   bits_rand[0] = gsl_rng_get(cur_rng->rng);
+   rb->bits_rand[0] = gsl_rng_get(cur_rng->rng);
    MYDEBUG(D_BITS) {
-     printf("before %2d: |",bleft);
-     dumpbits(&bits_rand[0],bu);
+     printf("before %2d: |",rb->bleft);
+     dumpbits(&rb->bits_rand[0],bu);
      printf("|");
-     dumpbits(&bits_rand[1],bu);
+     dumpbits(&rb->bits_rand[1],bu);
      printf("|\n");
    }
    /* get the good bits only and fill in bits_rand[1] */
-   bits_rand[1] += b_window(bits_rand[0],bu-cur_rng->rmax_bits,bu-1,bleft-cur_rng->rmax_bits);
+   rb->bits_rand[1] += b_window(rb->bits_rand[0],bu-cur_rng->rmax_bits,bu-1,rb->bleft-cur_rng->rmax_bits);
    MYDEBUG(D_BITS) {
-     printf(" after %2d: |",bleft);
-     dumpbits(&bits_rand[0],bu);
+     printf(" after %2d: |",rb->bleft);
+     dumpbits(&rb->bits_rand[0],bu);
      printf("|");
-     dumpbits(&bits_rand[1],bu);
+     dumpbits(&rb->bits_rand[1],bu);
      printf("|\n");
    }
-   bleft -= cur_rng->rmax_bits;  /* Number of bits we still need to fill bits_rand[1] */
+   rb->bleft -= cur_rng->rmax_bits;  /* Number of bits we still need to fill bits_rand[1] */
  }
 
  /*
   * We are now in range.  We get just the number of bits we need, from
   * the right of course, and add them to bits_rand[1].
   */
- bits_rand[0] = gsl_rng_get(cur_rng->rng);
+ rb->bits_rand[0] = gsl_rng_get(cur_rng->rng);
  MYDEBUG(D_BITS) {
-   printf("before %2d: |",bleft);
-   dumpbits(&bits_rand[0],bu);
+   printf("before %2d: |",rb->bleft);
+   dumpbits(&rb->bits_rand[0],bu);
    printf("|");
-   dumpbits(&bits_rand[1],bu);
+   dumpbits(&rb->bits_rand[1],bu);
    printf("|\n");
  }
- if(bleft != 0) {
-   bits_rand[1] += b_window(bits_rand[0],bu-bleft,bu-1,0);
+ if(rb->bleft != 0) {
+   rb->bits_rand[1] += b_window(rb->bits_rand[0],bu-rb->bleft,bu-1,0);
  }
  MYDEBUG(D_BITS) {
-   printf(" after %2d: |",bleft);
-   dumpbits(&bits_rand[0],bu);
+   printf(" after %2d: |",rb->bleft);
+   dumpbits(&rb->bits_rand[0],bu);
    printf("|");
-   dumpbits(&bits_rand[1],bu);
+   dumpbits(&rb->bits_rand[1],bu);
    printf("|\n");
  }
  /* Save for return */
- tmp = bits_rand[1];
+ tmp = rb->bits_rand[1];
  /*
   * Move the leftover bits from bits_rand[0] into bits_rand[1] (right
   * justified), adjust bleft accordingly, and return.  Note that if we
   * exactly filled the return with ALL the bits in rand[0] then we
   * need to start over on the next one.
   */
- if(bleft == cur_rng->rmax_bits){
-   bleft = bu;
+ if(rb->bleft == cur_rng->rmax_bits){
+   rb->bleft = bu;
  } else {
-   bits_rand[1] = b_window(bits_rand[0],bu-cur_rng->rmax_bits,bu-bleft-1,bu-cur_rng->rmax_bits+bleft);
-   bleft = bu - cur_rng->rmax_bits + bleft;
+   rb->bits_rand[1] = b_window(rb->bits_rand[0],bu-cur_rng->rmax_bits,bu-rb->bleft-1,bu-cur_rng->rmax_bits+rb->bleft);
+   rb->bleft = bu - cur_rng->rmax_bits + rb->bleft;
    MYDEBUG(D_BITS) {
-     printf("  done %2d: |",bleft);
-     dumpbits(&bits_rand[0],bu);
+     printf("  done %2d: |",rb->bleft);
+     dumpbits(&rb->bits_rand[0],bu);
      printf("|");
-     dumpbits(&bits_rand[1],bu);
+     dumpbits(&rb->bits_rand[1],bu);
      printf("|\n");
    }
  }
@@ -1026,22 +1025,13 @@ unsigned int get_uint_rand(random_generator_t *cur_rng)
  * lags without worrying too much about it.  Space is cheap in the
  * one-page range.
  */
-#define BRBUF 6
-static unsigned int bits_randbuf[BRBUF];
-static unsigned int bits_output[BRBUF];
-/* pointer to line containing LAST return */
-static int brindex = -1;
-/* pointer to region being backfilled */
-static int iclear = -1;
-/* pointer to the last (most significant) returned bit */
-static int bitindex = -1;
-
 void get_rand_bits(void *result,unsigned int rsize,unsigned int nbits,random_generator_t *cur_rng)
 {
 
  int i,offset;
  unsigned int bu;
  char *output,*resultp;
+ read_buffer_params_t *rb = &cur_rng->read_buffer;
 
  /*
   * Zero the return.  Note rsize is in characters/bytes.
@@ -1069,7 +1059,7 @@ void get_rand_bits(void *result,unsigned int rsize,unsigned int nbits,random_gen
    return;   /* Unlikely, but possible */
  }
 
- if(brindex == -1){
+ if(rb->brindex == -1){
    /*
     * First call, fill the buffer BACKWARDS.  I know this looks odd,
     * but we have to think of bits coming off the generator from least
@@ -1078,7 +1068,7 @@ void get_rand_bits(void *result,unsigned int rsize,unsigned int nbits,random_gen
     * a de-facto shuffle for generators with rmax_bits < 32.
     */
    for(i=BRBUF-1;i>=0;i--) {
-     bits_randbuf[i] = get_uint_rand(cur_rng);
+     rb->bits_randbuf[i] = get_uint_rand(cur_rng);
      /* printf("bits_randbuf[%d] = %u\n",i,bits_randbuf[i]); */
    }
    /*
@@ -1086,17 +1076,17 @@ void get_rand_bits(void *result,unsigned int rsize,unsigned int nbits,random_gen
     * last bit.  Note that iclear should always start equal to brindex
     * as one enters the next code segment.
     */
-   brindex = BRBUF;
-   iclear = brindex-1;
-   bitindex = 0;
+   rb->brindex = BRBUF;
+   rb->iclear = rb->brindex-1;
+   rb->bitindex = 0;
    MYDEBUG(D_BITS) {
-     printf("Initialization: iclear = %d  brindex = %d   bitindex = %d\n",iclear,brindex,bitindex);
+     printf("Initialization: iclear = %d  brindex = %d   bitindex = %d\n",rb->iclear,rb->brindex,rb->bitindex);
    }
  }
  MYDEBUG(D_BITS) {
    for(i=0;i<BRBUF;i++){
      printf("%2d: ",i);
-     dumpuintbits(&bits_randbuf[i],1);
+     dumpuintbits(&rb->bits_randbuf[i],1);
      printf("\n");
    }
  }
@@ -1114,39 +1104,39 @@ void get_rand_bits(void *result,unsigned int rsize,unsigned int nbits,random_gen
   * modulus/remainder, then handle a negative result (borrow), then finally
   * deal with wraparound of the main index as well.
   */
- brindex -= nbits/bu;
- bitindex = bitindex - nbits%bu;
- if(bitindex < 0) {
+ rb->brindex -= nbits/bu;
+ rb->bitindex = rb->bitindex - nbits%bu;
+ if(rb->bitindex < 0) {
    /* Have to borrow from previous uint */
-   brindex--;                /* So we push back one more */
-   bitindex += bu;           /* and find the new bitindex */
+   rb->brindex--;                /* So we push back one more */
+   rb->bitindex += bu;           /* and find the new bitindex */
  }
- if(brindex < 0) brindex += BRBUF;  /* Oops, need to wrap around */
+ if(rb->brindex < 0) rb->brindex += BRBUF;  /* Oops, need to wrap around */
  MYDEBUG(D_BITS) {
-   printf("  Current Call: iclear = %d  brindex = %d   bitindex = %d\n",iclear,brindex,bitindex);
+   printf("  Current Call: iclear = %d  brindex = %d   bitindex = %d\n",rb->iclear,rb->brindex,rb->bitindex);
  }
 
  /*
   * OK, so we want a window nbits long, starting in the uint indexed
   * by brindex, displaced by bitindex.
   */
- offset = brindex*bu + bitindex;
+ offset = rb->brindex*bu + rb->bitindex;
  MYDEBUG(D_BITS) {
    printf("   Window Call: tuple = %d  offset = %d\n",nbits,offset);
  }
- get_ntuple_cyclic(bits_randbuf,BRBUF,bits_output,BRBUF,nbits,offset);
+ get_ntuple_cyclic(rb->bits_randbuf,BRBUF,rb->bits_output,BRBUF,nbits,offset);
  /* Handle case where we returned whole uint at brindex location */
  MYDEBUG(D_BITS) {
-   printf("   Cleaning up:  iclear = %d  brindex = %d  bitindex = %d\n",iclear,brindex,bitindex);
+   printf("   Cleaning up:  iclear = %d  brindex = %d  bitindex = %d\n",rb->iclear,rb->brindex,rb->bitindex);
  }
 
  /*
   * Time to backfill.  We walk backwards, filling until we reach
   * the current index.
   */
- while(iclear != brindex){
-   bits_randbuf[iclear--] = get_uint_rand(cur_rng);
-   if(iclear < 0) iclear += BRBUF;  /* wrap on around */
+ while(rb->iclear != rb->brindex){
+   rb->bits_randbuf[rb->iclear--] = get_uint_rand(cur_rng);
+   if(rb->iclear < 0) rb->iclear += BRBUF;  /* wrap on around */
  }
  /*
   * Dump the refilled buffer
@@ -1154,7 +1144,7 @@ void get_rand_bits(void *result,unsigned int rsize,unsigned int nbits,random_gen
  MYDEBUG(D_BITS) {
    for(i=0;i<BRBUF;i++){
      printf("%2d: ",i);
-     dumpuintbits(&bits_randbuf[i],1);
+     dumpuintbits(&rb->bits_randbuf[i],1);
      printf("\n");
    }
  }
@@ -1166,14 +1156,14 @@ void get_rand_bits(void *result,unsigned int rsize,unsigned int nbits,random_gen
   */
  MYDEBUG(D_BITS) {
    printf("bits_output[%d] = ",BRBUF-1);
-   dumpuintbits(&bits_output[BRBUF-1],1);
+   dumpuintbits(&rb->bits_output[BRBUF-1],1);
    printf("\n");
  }
 
  /*
   * Get and align addresses of char *pointers into bits_output and result
   */
- output = (char *)&bits_output[BRBUF]-rsize;
+ output = (char *)&rb->bits_output[BRBUF]-rsize;
  resultp = (char *)result;
  MYDEBUG(D_BITS) {
    printf("rsize = %d  output address = %p result address = %p\n",rsize,output,resultp);
@@ -1423,19 +1413,19 @@ void get_rand_pattern(void *result,unsigned int rsize,int *pattern,random_genera
  * static buffers that must be cleared in order to achieve consistent
  * results from a rng reseed on, per run.
  */
-void reset_bit_buffers()
+void reset_bit_buffers(read_buffer_params_t *rb)
 {
 
   int i;
   
-  bits_rand[0] = bits_rand[1] = 0;
-  bleft = -1;
+  rb->bits_rand[0] = rb->bits_rand[1] = 0;
+  rb->bleft = -1;
   for(i = 0;i<BRBUF;i++){
-    bits_randbuf[i] = 0;
-    bits_output[i] = 0;
+    rb->bits_randbuf[i] = 0;
+    rb->bits_output[i] = 0;
   }
-  brindex = -1;
-  iclear = -1;
-  bitindex = -1;
+  rb->brindex = -1;
+  rb->iclear = -1;
+  rb->bitindex = -1;
 
 }

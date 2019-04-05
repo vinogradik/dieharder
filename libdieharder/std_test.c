@@ -244,8 +244,6 @@ void add_2_test(Dtest *dtest, Test **test, Test **ref_test, int count)
 
  /* If two sample test is enabled, fill ref_test using ref_rng. */
  if (etalon_enabled) {
-     //temp solution: we should reset bit buffers when switch between generators
-     reset_bit_buffers();
      for(i = test[0]->psamples; i < imax; i++){
         dtest->test(ref_test,i, &etalon_generator);
      }

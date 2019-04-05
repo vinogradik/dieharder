@@ -38,6 +38,7 @@
 #include <gsl/gsl_matrix.h>
 #include <gsl/gsl_eigen.h>
 typedef struct random_generator random_generator_t;
+typedef struct read_buffer_params read_buffer_params_t;
 #include <dieharder/Dtest.h>
 #include <dieharder/parse.h>
 #include <dieharder/verbose.h>
@@ -135,7 +136,7 @@ typedef struct random_generator random_generator_t;
  void get_rand_bits(void *result,unsigned int rsize,unsigned int nbits, random_generator_t *cur_rng);
  void mybitadd(char *dst, int doffset, char *src, int soffset, int slen);
  void get_rand_pattern(void *result,unsigned int rsize,int *pattern, random_generator_t* cur_rng);
- void reset_bit_buffers();
+ void reset_bit_buffers(read_buffer_params_t *rb);
 
 /* Cruft
  int get_int_bit(unsigned int i, unsigned int n);
@@ -282,8 +283,18 @@ typedef struct random_generator random_generator_t;
    unsigned int is_etalon;            /* flag whether complex generator is used as etalon */
  } input_params_t;
 
- /*struct of complex generator*/
 #define BRBUF 6
+ struct read_buffer_params{
+   unsigned int bits_rand[2];         /* A buffer that can handle partial returns */
+   int bleft;                         /* Number of bits we still need in rand[1] */
+   unsigned int bits_randbuf[BRBUF];
+   unsigned int bits_output[BRBUF];
+   int brindex;                       /* pointer to line containing LAST return */
+   int iclear;                        /* pointer to region being backfilled */
+   int bitindex;                      /* pointer to the last (most significant) returned bit */
+ };
+
+ /*struct of complex generator*/
  struct random_generator{
    gsl_rng *rng;                  /* VECTOR of gsl generators */
    input_params_t params;       /* command line parameters of complex generator */
@@ -291,14 +302,7 @@ typedef struct random_generator random_generator_t;
    unsigned int rmax;             /* scratch space for random_max manipulation */
    unsigned int rmax_bits;        /* Number of valid bits in rng */
    unsigned int rmax_mask;        /* Mask for valid section of unsigned int */
-   /* read buffer parameters*/
-   unsigned int bits_rand[2];
-   int bleft;
-   unsigned int bits_randbuf[BRBUF];
-   unsigned int bits_output[BRBUF];
-   int brindex;
-   int iclear;
-   int bitindex;
+   read_buffer_params_t read_buffer;     /* Read buffer parameters */
  };
 
  /*
