@@ -16,7 +16,7 @@
 # automake --add-missing --copy --gnu
 
 echo "Running autoreconf..."
-autoreconf
+autoreconf -fvi
 
 #
 # Might as well run this -- then we are ready to run make.
