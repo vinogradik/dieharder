@@ -22,178 +22,72 @@
  * caller (and guaranteed to be big enough to hold the result).
  */
 
+/* Refactored; new bits are directly obtained from the generator only if
+ buffer is empty, so it is now is a clean optimization -- AS */
+
 inline static uint get_rand_bits_uint (uint nbits, uint mask, gsl_rng *rng)
+/* get nint <= 32 bits from the input stread;
+ assumes that mask is either 0 or 111...111 (nbits ones)
+ -- for optimization  */
 {
+    if (nbits==0) {return 0;}
+    if(nbits > 32){
+        fprintf(stderr,"Warning!  dieharder cannot yet work with\b");
+        fprintf(stderr,"           %u > 32 bit chunks.  Exiting!\n\n",nbits);
+        exit(0);
+    }
+    /* 0 < nbits <= 32 */
+    static uint bit_buffer;
+    static uint bits_left_in_bit_buffer = 0;
+    
+    /* the unused part of the stream is bits_left_in_bit_buffer
+     least significant bits in bit_buffer, to be read from left to right,
+     plus yet unread bits from the generator */
 
- static uint bit_buffer;
- static uint bits_left_in_bit_buffer = 0;
- uint bits,breturn;
-
- /*
-  * If there are enough bits left in the bit buffer, shift them out into
-  * bits and return.  I like to watch this happen, so I'm instrumenting
-  * this with some I/O from bits.c.  I'm also adding the following
-  * conditionals so it works even if the mask isn't set by the caller
-  * and does the right thing if the mask is supposed to be all 1's
-  * (in which case this is a dumb routine to call, in some sense).
-  */
- if(mask == 0){
-   mask = ((1u << nbits) - 1);
- }
- if(nbits == 32){
-   mask = 0xFFFFFFFF;
- }
- if(nbits > 32){
-   fprintf(stderr,"Warning!  dieharder cannot yet work with\b");
-   fprintf(stderr,"           %u > 32 bit chunks.  Exiting!\n\n",nbits);
-   exit(0);
- }
-
-/*
-******************************************************************
- * OK, the way it works is:
-First entry, nbits = 12
-Mask = |00000000000000000000111111111111|
-Buff = |00000000000000000000000000000000|
-Not enough:
-Bits = |00000000000000000000000000000000|
-So we refill the bit_buffer (which now has 32 bits left):
-Buff = |11110101010110110101010001110000|
-We RIGHT shift this (32-nbits), aligning it for return,
-& with mask, and return.
-Bits = |00000000000000000000111101010101|
-Need the next one.  There are 20 bits left.  Buff is
-not changed.  We right shift buffer by 20-12 = 8,
-then & with mask to return:
-Buff = |11110101010110110101010001110000|
-                    ^          ^ 8 bits->
-Bits = |00000000000000000000101101010100|
-Ready for the next one. There are only 8 bits left
-and we need 12.  We LEFT shift Buff onto Bits
-by needbits = 12-8 = 4
-Buff = |11110101010110110101010001110000|
-Bits = |01010101101101010100011100000000|
-We refill the bit buffer Buff:
-Buff = |01011110001111000000001101010010|
-        ^  ^
-We right shift 32 - needbits and OR the result with
-Bits, & mask, and return.  The mask dumps the high part
-from the old buffer.:
-Bits = |00000000000000000000011100000101|
-We're back around the horn with 28 bits left.  This is
-enough, so we just right shift until the window is aligned,
-mask out what we want, decrement the counter of number
-of bits left, return:
-Buff = |01011110001111000000001101010010|'
-            ^          ^ 
-Bits = |00000000000000000000111000111100|
-and so on.  Very nice.
-******************************************************************
-* Therefore, this routine delivers bits in left to right bits
-* order, which is fine.
-*/
-
- /*
-  * FIRST of all, if nbits == 32 and rmax_bits == 32 (or for that matter,
-  * if we ever seek nbits == rmax_bits) we might as well just return the
-  * gsl rng right away and skip all the logic below.  In the particular
-  * case of nbits == 32 == rmax_bits, this also avoids a nasty problem
-  * with bitshift operators on x86 architectures, see below.  I left a
-  * local patch in below as well just to make double-dog sure that one
-  * never does (uintvar << 32) for some uint variable; probably should
-  * do the same for (uintvar >> 32) calls below.
-  */
- if(nbits == rmax_bits){
-   return gsl_rng_get(rng);
- }
+    /* optimization for the case when no bits are in the buffer and
+     the same number of bits is requested (nbits) and provided
+     by the rng (rmax_bits) */
+    if((nbits == rmax_bits)&&(bits_left_in_bit_buffer==0)){
+        return gsl_rng_get(rng);
+    }
   
- MYDEBUG(D_BITS) {
-   printf("Entering get_rand_bits_uint. nbits = %d\n",nbits);
-   printf(" Mask = ");
-   dumpuintbits(&mask,1);
-   printf("\n");
-   printf("%u bits left\n",bits_left_in_bit_buffer);
-   printf(" Buff = ");
-   dumpuintbits(&bit_buffer,1);
-   printf("\n");
- }
-
- if (bits_left_in_bit_buffer >= nbits) {
-   bits_left_in_bit_buffer -= nbits;
-   bits = (bit_buffer >> bits_left_in_bit_buffer);
-   MYDEBUG(D_BITS) {
-     printf("Enough:\n");
-     printf(" Bits = ");
-     breturn = bits & mask;
-     dumpuintbits(&breturn,1);
-     printf("\n");
-   }
-   return bits & mask;
- }
-
- nbits = nbits - bits_left_in_bit_buffer;
- /*
-  * This fixes an annoying quirk of the x86.  It only uses the bottom five
-  * bits of the shift value.  That means that if you shift right by 32 --
-  * required in this routine to return 32 bit integers from a 32 bit
-  * generator -- nothing happens as 32 is 0100000 and only the 00000 is used
-  * to shift!  What a bitch!
-  *
-  * I'm going to FIRST try this -- which should work to clear the
-  * bits register if nbits for the shift is 32 -- and then very
-  * likely alter this to just check for rmax_bits == nbits == 32
-  * and if so just shovel gsl_rng_get(rng) straight through...
-  */
- if(nbits == 32){
-   bits = 0;
- } else {
-   bits = (bit_buffer << nbits);
- }
- MYDEBUG(D_BITS) {
-   printf("Not enough, need %u:\n",nbits);
-   printf(" Bits = ");
-   dumpuintbits(&bits,1);
-   printf("\n");
- }
- while (1) {
-   bit_buffer = gsl_rng_get (rng);
-   bits_left_in_bit_buffer = rmax_bits;
-
-   MYDEBUG(D_BITS) {
-     printf("Refilled bit_buffer\n");
-     printf("%u bits left\n",bits_left_in_bit_buffer);
-     printf(" Buff = ");
-     dumpuintbits(&bit_buffer,1);
-     printf("\n");
-   }
-
-   if (bits_left_in_bit_buffer >= nbits) {
-     bits_left_in_bit_buffer -= nbits;
-     bits |= (bit_buffer >> bits_left_in_bit_buffer);
-
-     MYDEBUG(D_BITS) {
-       printf("Returning:\n");
-       printf(" Bits = ");
-       breturn = bits & mask;
-       dumpuintbits(&breturn,1);
-       printf("\n");
-     }
-
-     return bits & mask;
-   }
-   nbits -= bits_left_in_bit_buffer;
-   bits |= (bit_buffer << nbits);
-
-   MYDEBUG(D_BITS) {
-     printf("This should never execute:\n");
-     printf("  Bits = ");
-     dumpuintbits(&bits,1);
-     printf("\n");
-   }
-
- }
-
+    /* produce mask with nbits 1s; shift trick works only for n<32 */
+    if(mask == 0){
+        if (nbits < 32){mask = (1u << nbits) - 1;}else{mask = 0xFFFFFFFF;}
+    }
+    
+    if (bits_left_in_bit_buffer >= nbits) { /* buffer has enough bits */
+        bits_left_in_bit_buffer -= nbits; /* new length stored */
+        return (bit_buffer >> bits_left_in_bit_buffer) & mask;
+    }
+    /* bits_left_in_bit_buffer < nbits, concatenation needed */
+    uint answer; /* here the answer will be composed */
+    nbits-= bits_left_in_bit_buffer; /* planned number of missing bits */
+    /* nbits > 0 */
+    if (nbits < 32){
+        answer= (bit_buffer << nbits) & mask;
+    }else{
+        answer= 0; /* special case neded since 32 shift does not work! */
+    }
+    /* buffer is empty; it remains to fill nbits>0 least significant bits
+     in answer, now being zeros, by fresh bits from rng */
+    while (1) {
+        bit_buffer = gsl_rng_get (rng);
+        bits_left_in_bit_buffer = rmax_bits;
+        /* non-used part of the bit_buffer is filled by zeros */
+        if (bits_left_in_bit_buffer >= nbits) {
+            bits_left_in_bit_buffer -= nbits;
+            answer |= (bit_buffer >> bits_left_in_bit_buffer);
+            return (answer);
+        } /* nbits > bits_left_in_bit_buffer */
+        nbits -= bits_left_in_bit_buffer; /* will be missing */
+        answer |= (bit_buffer << nbits);
+        bits_left_in_bit_buffer= 0; /* for clarity; actually redundant */
+    }
 }
+
+
+/* unchanged starting from this point - AS */
 
 /*
  * This is a drop-in-replacement for get_bit_ntuple() contributed by
