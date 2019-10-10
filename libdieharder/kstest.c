@@ -22,9 +22,7 @@ double p_ks_new(int n,double d);
 
 double kstest(double *pvalue,int count)
 {
-
- int i;
- double y,d,d1,d2,dmax,csqrt;
+ double csqrt;
  double p,x;
 
  /* First, handle degenerate cases. */
@@ -37,44 +35,21 @@ double kstest(double *pvalue,int count)
  gsl_sort(pvalue,1,count);
 
  /*
-  * Here's the test.  For each (sorted) pvalue, its index is the
-  * number of values cumulated to the left of it.  d is the distance
-  * between that number and the straight line representing a uniform
-  * accumulation.  We save the maximum d across all cumulated samples
-  * and transform it into a p-value at the end.
+  * Here's the test.  For each (sorted) pvalue[i], there is 
+  a jump in the empirical distribution from i/n to (i+1)/n; 
+  we compute the maximal distance between those values and 
+  the uniform distribution pvalue[i]
   */
- dmax = 0.0;
- if(verbose == D_KSTEST || verbose == D_ALL){
-   printf("       p             y              d             d1           d2         dmax\n");
- }
- for(i=1;i<=count;i++){
-   y = (double) i/(count+1.0);
-   /*
-    * d = fabs(pvalue[i] - y);
-    *
-    * Correction by David Bauer, pulled from R code for KS.
-    * Apparently the above line is right/left biased and this
-    * handles the position more symmetrically.   This fix is
-    * CRUCIAL for small sample sizes, and can be validated with:
-    *   dieharder -d 204 -t 100 -p 10000 -D default -D histogram
-    *
-    * Note:  Without the fabs, pvalue could be LESS than y
-    * and be ignored by fmax.  Also, I don't really like the end
-    * points -- y[0] shouldn't be zero, y[count] shouldn't be one.  This
-    * sort of thing seems as thought it might matter at very high
-    * precision.  Let's try running from 1 to count and dividing by count
-    * plus 1.
-    */
-   d1 = pvalue[i-1] - y;
-   d2 = fabs(1.0/(count+1.0) - d1);
-   d1 = fabs(d1);
-   d = fmax(d1,d2);
+ 
 
-   if(d1 > dmax) dmax = d1;
-   if(verbose == D_KSTEST || verbose == D_ALL){
-     printf("%11.6f   %11.6f    %11.6f   %11.6f  %11.6f  %11.6f\n",pvalue[i-1],y,d,d1,d2,dmax);
-   }
-
+ /* corrected version */
+ double dmax = 0.0;
+ for (int i=0;i<count;i++){
+   double d=fmax( 
+       fabs( pvalue[i] - ((double)i)    /((double) count)), 
+       fabs( pvalue[i] - ((double)(i+1))/((double) count)) 
+     ); 
+   if (d>dmax){dmax= d;}
  }
 
  /*
