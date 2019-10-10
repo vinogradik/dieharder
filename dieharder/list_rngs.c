@@ -34,14 +34,14 @@ void list_rngs()
   * even if it is called more than once -- it uses a static global vector
   * in libdieharder's data space and is therefore persistent.
   */
- dieharder_rng_types();
- add_ui_rngs();
+ /* dieharder_rng_types(); [Not needed now, already called in dieharder.c -as] */ 
+ /* add_ui_rngs(); */ /* Used here but not when it should be used for testing! -as*/
 
 
  /* Version string seems like a good idea */
  dh_header();
- printf("#   %3s %-20s|%3s %-20s|%3s %-20s#\n"," Id","Test Name",
-         " Id","Test Name"," Id","Test Name");
+ printf("#   %3s %-20s|%3s %-20s|%3s %-20s#\n"," Id","Generator Name",
+         " Id","Generator Name"," Id","Generator Name");
  printf("#=============================================================================#\n");
  i = 0;
  j = 0;

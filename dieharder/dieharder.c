@@ -30,6 +30,24 @@ int main(int argc, char *argv[])
  set_globals();
 
  /*
+  * This fills the global *dh_rng_types defined in libdieharder with all
+  * the rngs known directly to libdieharder including known hardware
+  * generators and file input "generators".  This routine also sets the
+  * counts of each "kind" of generator into global/shared variables.  This
+  * command must be run (by all UIs, not just the dieharder CLI) BEFORE
+  * adding any UI generators, and BEFORE selecting a generator or input
+  * stream to test. [Moved before parsecl(argc,argv) as recommended, 
+  * since we need to know which tests/generators are available when 
+  *  looking at options... -as] 
+  */
+ dieharder_rng_types();
+
+ /*
+  * Similarly we load *dh_test_types[].
+  */
+ dieharder_test_types();
+
+ /*
   * parsecl executes CLI-specific code that overrides the defaults set by
   * set_globals with choices selected via command line options.  A UI
   * should almost certainly just reset the global variables directly and
@@ -39,21 +57,6 @@ int main(int argc, char *argv[])
   */
  parsecl(argc,argv);
 
- /*
-  * This fills the global *dh_rng_types defined in libdieharder with all
-  * the rngs known directly to libdieharder including known hardware
-  * generators and file input "generators".  This routine also sets the
-  * counts of each "kind" of generator into global/shared variables.  This
-  * command must be run (by all UIs, not just the dieharder CLI) BEFORE
-  * adding any UI generators, and BEFORE selecting a generator or input
-  * stream to test.
-  */
- dieharder_rng_types();
-
- /*
-  * Similarly we load *dh_test_types[].
-  */
- dieharder_test_types();
 
  /*
   * The following contains commands that are likely to be different for

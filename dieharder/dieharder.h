@@ -15,8 +15,8 @@
 
 /*
  * Flags and variables to control all output formatting etc.  tflag_default
- * is set in set_globals to a default to be used if -T 0 is selected.
- * tflag is otherwise accumulated from a series of -T FLAG calls, where
+ * is set in set_globals to a default to be used if -D 0 is selected.
+ * tflag is otherwise accumulated from a series of -D FLAG calls, where
  * flag can be either numerical or a field/control name.  table_separator
  * allows a user to pick their favorite field separator in the final output
  * table: a blank is easy to parse, a | is easy to read, a , is easy to

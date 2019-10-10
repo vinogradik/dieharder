@@ -95,7 +95,7 @@ void parsecl(int argc, char **argv)
 	   }
 	 }
 	 if(i == TCNT) {
-	   fprintf(stderr,"Invalid -T %s option.\n",optarg);
+	   fprintf(stderr,"Invalid -D %s option.\n",optarg);
 	   exit(1);
 	 }
        }
@@ -116,19 +116,38 @@ void parsecl(int argc, char **argv)
        }
        break;
      case 'd':
-       /*
+        /*
         * We need to set dtest_num, either from a number or by searching
-        * the dh_test_types[] set of tests for a string/name match.  We
-	* also have to be sure to leave dtest_num negative if we set
-	* dtest_name, since that is the signal to search for the number
-	* later.
+        * the dh_test_types[] set of tests for a string/name match. 
+        * [Search for name moved here from run_test.c, to provide correct diagnostics -as]
         */
        dtest_tmp =  strtol(optarg,&endptr,10);
-       /* printf("optarg = %s, dtest_tmp = %d endptr = %s\n",optarg,dtest_tmp,endptr); */
-       if(strncmp(optarg,endptr,1) == 0){
+       if(strncmp(optarg,endptr,1) == 0){ /* string option argument */
          strncpy(dtest_name,optarg,128);
-       } else {
+         int test_name_found= 0;
+         for(i=0;i<MAXTESTS;i++){
+           if(dh_test_types[i]){
+             if(strncmp(dh_test_types[i]->sname,dtest_name,128)==0){
+               dtest_num = i;
+               test_name_found= 1;
+	       break;
+             }
+           }
+         }
+         if (!test_name_found) {
+           fprintf(stderr,"Bad -d option: test with name %s does not exist\n",dtest_name);
+           errflg++;
+         }
+       } else if (strncmp(endptr,"\0",1)==0) { /* purely numerical argument */
+         printf("Numerical argument for -d is %d\n", dtest_tmp);
          dtest_num = dtest_tmp;
+         if (dh_test_types[dtest_num]==0){
+           fprintf(stderr,"Bad -d option: test number %d does not exist\n",dtest_num);
+           errflg++;
+         }
+       } else {
+         fprintf(stderr, "Bad -d option argument: %s\n", optarg);
+         errflg++;
        }
        break;
      case 'F':
