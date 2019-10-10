@@ -33,6 +33,7 @@
  *========================================================================
  */
 
+/* corrected/refactored version */
 
 #include <dieharder/libdieharder.h>
 
@@ -44,13 +45,11 @@
 int diehard_bitstream(Test **test, int irun)
 {
 
- uint i,j,t,boffset,coffset;
+ uint i,t;
  Xtest ptest;
  char *w;
- uint *bitstream,w20,wscratch,newbyte;
- unsigned char *cbitstream = 0;
- uint overlap = 1;  /* Leftovers/Cruft */
-
+ uint *bitstream,bitstreamlen,w20;
+    
  /*
   * for display only.  0 means "ignored".
   */
@@ -72,200 +71,57 @@ int diehard_bitstream(Test **test, int irun)
   *
   * for non-overlapping samples we need (2^21)*5/8 = 1310720 uints, but
   * for luck we add one as we'd hate to run out.  For overlapping samples,
-  * we need 2^21 BITS or 2^18 = 262144 uints, again plus one to be sure
+  * we need 2^21 BITS or 2^16 = 65536 uints, again plus one to be sure
   * we don't run out.
   */
-#define BS_OVERLAP 262146
-#define BS_NO_OVERLAP 1310722
- ptest.y = 141909;
- if(overlap){
-   ptest.sigma = 428.0;
-   bitstream = (uint *)malloc(BS_OVERLAP*sizeof(uint));
-   for(i = 0; i < BS_OVERLAP; i++){
+#define BS_OVERLAP 65537
+#define BS_NO_OVERLAP 1310720
+    
+ptest.y = 141909;
+if(overlap){
+    ptest.sigma = 428.0;
+    bitstreamlen = BS_OVERLAP;
+} else {
+    ptest.sigma = 290.0;
+    bitstreamlen = BS_NO_OVERLAP;
+}
+bitstream = (uint *)malloc(bitstreamlen*sizeof(uint));
+for(i = 0; i < bitstreamlen; i++){
      bitstream[i] = get_rand_bits_uint(32,0xffffffff,rng);
-   }
-   MYDEBUG(D_DIEHARD_BITSTREAM) {
-     printf("# diehard_bitstream: Filled bitstream with %u rands for overlapping\n",BS_OVERLAP);
-     printf("# diehard_bitstream: samples.  Target is mean 141909, sigma = 428.\n");
-   }
- } else {
-   ptest.sigma = 290.0;
-   bitstream = (uint *)malloc(BS_NO_OVERLAP*sizeof(uint));
-   for(i = 0; i < BS_NO_OVERLAP; i++){
-     bitstream[i] = get_rand_bits_uint(32,0xffffffff,rng);
-   }
-   cbitstream = (unsigned char *)bitstream;   /* To allow us to access it by bytes */
-   MYDEBUG(D_DIEHARD_BITSTREAM) {
-     printf("# diehard_bitstream: Filled bitstream with %u rands for non-overlapping\n",BS_NO_OVERLAP);
-     printf("# diehard_bitstream: samples.  Target is mean 141909, sigma = 290.\n");
-   }
- }
+}
 
- /*
-  * We now make test[0]->tsamples measurements, as usual, to generate the
-  * missing statistic.  The easiest way to proceed is to just increment a
-  * vector of length 2^20 using the generated ntuples as the indices of
-  * the slot being incremented.  Then we zip through the vector counting
-  * the remaining zeros.  This is horribly nonlocal but then, these ARE
-  * random numbers, right?
-  */
+/* array bitstream[0]bitstream[1].... as written in this order and in binary gives a sequence of bits */
 
- w = (char *)malloc(M*sizeof(char));
- memset(w,0,M*sizeof(char));
+w = (char *)malloc(M*sizeof(char)); /* can be bool, only 0 and 1 values are needed */
+memset(w,0,M*sizeof(char));
 
- MYDEBUG(D_DIEHARD_BITSTREAM) {
-   printf("# diehard_bitstream: w[] (counter vector) is allocated and zeroed\n");
- }
-
- i = 0;
- wscratch = bitstream[i++];     /* Get initial uint into wscratch */
- for(t=0;t<test[0]->tsamples;t++){
-
-   if(overlap){
-
-     /*
-      * We have to slide an overlapping 20-bit window along one bit at a
-      * time to be able to use Marsaglia's sigma of 428.  We do this by
-      * taking two scratch uints and pulling a left, right trick to get
-      * the desired window for 8 returns, then shifting left a byte for
-      * four bytes, advancing to the next full uint in bitstream[] on
-      * the boundary.  Yuk, but what can one do?
-      */
-     coffset = (t%32)/8;     /* next byte to shift in from bitstream, 0,1,2 or 3 */
-     boffset = t%8;          /* bit offset of w20 in wscratch */
-     i = t/32 + 1;           /* bitstream index of uint from which we draw next byte */
-     /* printf("t = %u, coffset = %u\n",t,coffset); */
-     if(boffset == 0) {      /* Get a new byte */
-       wscratch = wscratch << 8;  /* make room for next byte */
-       /*
-       printf("# diehard_bitstream: left shift 8 wscratch = ");
-       dumpuintbits(&wscratch, 1);
-       printf("\n");
-       */
-       newbyte = bitstream[i] << (8*coffset);
-       /*
-       printf("# diehard_bitstream: left shift %u newbyte = ",8*coffset);
-       dumpuintbits(&newbyte, 1);
-       printf("\n");
-       */
-       newbyte = newbyte >> 24;
-       /*
-       printf("# diehard_bitstream: newbyte = ");
-       dumpuintbits(&newbyte, 1);
-       printf("\n");
-       */
-       wscratch += newbyte;
-     }
-     /*
-     MYDEBUG(D_DIEHARD_BITSTREAM) {
-       printf("# diehard_bitstream: wscratch = ");
-       dumpuintbits(&wscratch, 1);
-       printf("\n");
-     }
-     */
-     w20 = ((wscratch << boffset) >> 12);
-     MYDEBUG(D_DIEHARD_BITSTREAM) {
-       printf("# diehard_bitstream: w20 = ");
-       dumpuintbits(&w20, 1);
-       printf("\n");
-     }
-     w[w20]++;
-
-   } else {
-
-     /*
-      * For non-overlapping samples, easiest way is to just get 2.5 bytes
-      * at a time and keep track of a byte index into bitstream,
-      * cbitstream.  Then things are actually pretty straightforward.
-      */
-     MYDEBUG(D_DIEHARD_BITSTREAM) {
-       printf("# diehard_bitstream: Non-overlapping t = %u, i = %u\n",t,i);
-     }
-     if(t%2 == 0){
-       w20 = 0;  /* Start with window clear, of course... */
-       for(j=0;j<2;j++){          /* Get two bytes */
-         w20 = w20 << 8;          /* Does nothing on first call */
-         w20 += cbitstream[i];  /* Shift in each byte */
-         MYDEBUG(D_DIEHARD_BITSTREAM) {
-           printf("# diehard_bitstream: i = %u  cb = %u w20 = ",i,cbitstream[i]);
-           dumpuintbits(&w20, 1);
-           printf("\n");
-         }
-	 i++;
-       }
-       wscratch = (uint) (cbitstream[i] >> 4);    /* Get first 4 bits of next byte */
-       MYDEBUG(D_DIEHARD_BITSTREAM) {
-         printf("# diehard_bitstream: wscratch = ");
-         dumpuintbits(&wscratch, 1);
-         printf("\n");
-       }
-       w20 = (w20 << 4) + wscratch;               /* Gets evens */
-       MYDEBUG(D_DIEHARD_BITSTREAM) {
-         printf("# diehard_bitstream: w20 = ");
-         dumpuintbits(&w20, 1);
-         printf("\n");
-       }
-     } else {
-       wscratch = (uint) cbitstream[i];
-       MYDEBUG(D_DIEHARD_BITSTREAM) {
-         printf("# diehard_bitstream: i = %u  wscratch = ",i);
-         dumpuintbits(&wscratch, 1);
-         printf("\n");
-       }
-       w20 = wscratch & 0x0000000F ; /* Get last 4 bits of next byte */
-       MYDEBUG(D_DIEHARD_BITSTREAM) {
-         printf("# diehard_bitstream: i = %u  w20 = ",i);
-         dumpuintbits(&w20, 1);
-         printf("\n");
-       }
-       i++;
-       for(j=0;j<2;j++){          /* Get two more bytes */
-         w20 = w20 << 8;
-         w20 += cbitstream[i];  /* Shift in each byte */
-         MYDEBUG(D_DIEHARD_BITSTREAM) {
-           printf("# diehard_bitstream: i = %u  w20 = ",i);
-           dumpuintbits(&w20, 1);
-           printf("\n");
-         }
-	 i++;
-       }
-       MYDEBUG(D_DIEHARD_BITSTREAM) {
-         printf("# diehard_bitstream: w20 = ");
-         dumpuintbits(&w20, 1);
-         printf("\n");
-       }
-     }
-     w[w20]++;
-
-   }
- }
-
- /*
-  * Now we count the holes, so to speak
-  */
- ptest.x = 0;
- for(i=0;i<M;i++){
+unsigned int mask20= (1<<20)-1;
+for(t=0;t<test[0]->tsamples;t++){
+    unsigned int pos, intpos, intshift;
+    if (overlap){pos=t;}else{pos=20*t;}
+    intpos= pos/32; /* integer array element where the bit substrings starts */
+    intshift= pos%32; /* number of unused bit in this element before the substring */
+    if (intshift+20<=32){ /* one integer element is enough */
+        w20= (bitstream[intpos]>>(32-20-intshift)) & mask20;
+    }else{
+        w20= ((bitstream[intpos]<<(intshift+20-32)) & mask20) |
+        (bitstream[intpos+1]>>(2*32-20-intshift));
+    }
+    w[w20]=1;
+}
+ptest.x = 0;
+for(i=0;i<M;i++){
    if(w[i] == 0){
      ptest.x++;
      /* printf("ptest.x = %f  Hole: w[%u] = %u\n",ptest.x,i,w[i]); */
    }
- }
+}
  if(verbose == D_DIEHARD_BITSTREAM || verbose == D_ALL){
    printf("%f %f %f\n",ptest.y,ptest.x,ptest.x-ptest.y);
  }
- /*
-  * I used this to prove that sigma = 288.6
-  * So while it is cruft, let's leave it in case anybody else wants
-  * to make a histogram and fit a normal and check.
- printf("%f\n",ptest.x);
-  */
 
  Xtest_eval(&ptest);
  test[0]->pvalues[irun] = ptest.pvalue;
-
- MYDEBUG(D_DIEHARD_BITSTREAM) {
-   printf("# diehard_bitstream(): test[0]->pvalues[%u] = %10.5f\n",irun,test[0]->pvalues[irun]);
- }
 
  /*
   * Don't forget to free or we'll leak.  Hate to have to wear
@@ -275,6 +131,4 @@ int diehard_bitstream(Test **test, int irun)
  nullfree(bitstream);
 
  return(0);
-
 }
-
