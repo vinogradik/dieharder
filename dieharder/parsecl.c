@@ -139,7 +139,6 @@ void parsecl(int argc, char **argv)
            errflg++;
          }
        } else if (strncmp(endptr,"\0",1)==0) { /* purely numerical argument */
-         printf("Numerical argument for -d is %d\n", dtest_tmp);
          dtest_num = dtest_tmp;
          if (dh_test_types[dtest_num]==0){
            fprintf(stderr,"Bad -d option: test number %d does not exist\n",dtest_num);
