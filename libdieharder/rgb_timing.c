@@ -26,7 +26,7 @@ int rgb_timing(Test **test, Rgb_Timing *timing)
    printf("# Entering rgb_timing(): ps = %u  ts = %u\n",test[0]->psamples,test[0]->tsamples);
  }
 
- seed = random_seed();
+ unsigned long int seed = random_seed();
  gsl_rng_set(rng,seed);
 
  rand_uint = (uint *)malloc((size_t)test[0]->tsamples*sizeof(uint));

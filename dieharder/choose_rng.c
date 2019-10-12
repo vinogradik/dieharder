@@ -250,6 +250,7 @@ int select_rng(int gennum,char *genname,unsigned int initial_seed)
   */
  if(tflag & TRATE){
    time_rng();
+   gsl_rng_set(rng,seed);
  }
 
  /*
@@ -436,6 +437,7 @@ int select_XOR()
   */
  if(tflag & TRATE){
    time_rng();
+   gsl_rng_set(rng,seed);
  }
 
  /*
