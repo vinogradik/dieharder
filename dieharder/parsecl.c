@@ -53,6 +53,8 @@ void parsecl(int argc, char **argv)
     exit(1); /* count this as an error */
  }
 
+ all= NO; /* default */
+ dtest_num= -1; /* no test selected before reading options */
  while ((c = getopt(argc,argv,"aBc:D:d:Ff:g:hi:k:lL:m:n:oO:p:P:S:s:t:Vv:W:X:x:Y:y:Z:z:")) != EOF){
    switch (c){
      case 'a':
@@ -66,55 +68,55 @@ void parsecl(int argc, char **argv)
        table_separator = (char) optarg[0];
        break;
      case 'D':
-       /*
-        * We only override the default table display flags if there is
-        * actually an argument to -D.  I hope.
-        */
-       tflag_tmp =  strtol(optarg,&endptr,10);
-       if(*endptr != 0){
-         /*
-	  * This trick will be useful for parsing both random
-	  * number generator names and test names.  Try to convert
-	  * the string to a number, but if the conversion fails
-	  * then try to lookup a string instead and convert to
-	  * the index/number needed.
-	  */
-	 for(i=0;i<TCNT;i++){
-	   if(strncmp(optarg,table_fields[i],TLENGTH) == 0){
-             /* printf("Setting table option %s.\n",optarg); */
-	     /*
-	      * If default is set explicitly, just add tflag_default
-	      * to presumed zero tflag.
-	      */
-	     if(i == 0){
-	       tflag = tflag_default;
-	     } else {
-               tflag_tmp = (int) pow(2,i-1);
-	     }
-	     break;
-	   }
-	 }
-	 if(i == TCNT) {
-	   fprintf(stderr,"Invalid -D %s option.\n",optarg);
-	   exit(1);
-	 }
-       }
-       if(tflag_tmp == 0){
-         /*
-	  * If default is set explicitly, just set tflag to the value of
-	  * tflag_default.  This means one can ADD a feature (e.g. prefix)
-	  * easily but don't add any twice!  Note that an undocumented
-	  * feature is that one can subtract flag values from the default
-	  * as well, but numerically only.
-	  */
-         tflag = tflag_default;
-       } else {
-         /*
-	  * We accumulate tflag from zero.
-	  */
-         tflag += tflag_tmp;
-       }
-       break;
+    	 /*
+    	  * We only override the default table display flags if there is
+    	  * actually an argument to -D.  I hope.
+    	  */
+    	 tflag_tmp =  strtol(optarg,&endptr,10);
+    	 if(*endptr != 0){
+    		 /*
+    		  * This trick will be useful for parsing both random
+    		  * number generator names and test names.  Try to convert
+    		  * the string to a number, but if the conversion fails
+    		  * then try to lookup a string instead and convert to
+    		  * the index/number needed.
+    		  */
+    		 for(i=0;i<TCNT;i++){
+    			 if(strncmp(optarg,table_fields[i],TLENGTH) == 0){
+    				 /* printf("Setting table option %s.\n",optarg); */
+    				 /*
+    				  * If default is set explicitly, just add tflag_default
+    				  * to presumed zero tflag.
+    				  */
+    				 if(i == 0){
+    					 tflag = tflag_default;
+    				 } else {
+    					 tflag_tmp = (int) pow(2,i-1);
+    				 }
+    				 break;
+    			 }
+    		 }
+    		 if(i == TCNT) {
+    			 fprintf(stderr,"Invalid -D %s option.\n",optarg);
+    			 exit(1);
+    		 }
+    	 }
+    	 if(tflag_tmp == 0){
+    		 /*
+    		  * If default is set explicitly, just set tflag to the value of
+    		  * tflag_default.  This means one can ADD a feature (e.g. prefix)
+    		  * easily but don't add any twice!  Note that an undocumented
+    		  * feature is that one can subtract flag values from the default
+    		  * as well, but numerically only.
+    		  */
+    		 tflag = tflag_default;
+    	 } else {
+    		 /*
+    		  * We accumulate tflag from zero.
+    		  */
+    		 tflag += tflag_tmp;
+    	 }
+    	 break;
      case 'd':
         /*
         * We need to set dtest_num, either from a number or by searching
@@ -130,7 +132,7 @@ void parsecl(int argc, char **argv)
              if(strncmp(dh_test_types[i]->sname,dtest_name,128)==0){
                dtest_num = i;
                test_name_found= 1;
-	       break;
+               break;
              }
            }
          }
@@ -140,7 +142,7 @@ void parsecl(int argc, char **argv)
          }
        } else if (strncmp(endptr,"\0",1)==0) { /* purely numerical argument */
          dtest_num = dtest_tmp;
-         if (dh_test_types[dtest_num]==0){
+         if ((dtest_num<0)||(dtest_num>=MAXTESTS)||dh_test_types[dtest_num]==0){
            fprintf(stderr,"Bad -d option: test number %d does not exist\n",dtest_num);
            errflg++;
          }
@@ -286,6 +288,11 @@ void parsecl(int argc, char **argv)
  /*
   * Some option was set incorrectly.
   */
+ if ((dtest_num==-1) & !all){ /* no test specified and -a is not used */
+	 fprintf(stderr,"Error: test is not specified and -a is not used\n");
+	 errflg++;
+ }
+
  if(errflg){
    Usage();
    exit(0);
